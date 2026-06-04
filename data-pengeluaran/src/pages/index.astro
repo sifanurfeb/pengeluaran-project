@@ -1,11 +1,17 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import { supabase } from '../db/supabase';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const { data, error } = await supabase.from("project").select('*');
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+{
+  (
+    <ul>
+  {data && data.map((entry) => (
+    <li>{entry.name}</li>
+  ))}
+  
+  {!data && <li class="text-red-500">Data gagal dimuat atau tabel tidak ditemukan!</li>}
+</ul>
+  )
+}
