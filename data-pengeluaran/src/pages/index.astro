@@ -27,7 +27,13 @@ if (selectedProjectId) {
     .select('*')
     .eq('project_id', selectedProjectId)
     .single();
-  
+
+  // 1. Hitung total pengeluaran jasa dari database (Sudah berjalan di tempat Anda)
+  totalJasa = expenses
+    .filter(item => item.kategori === 'jasa')
+    .reduce((acc, curr) => acc + (curr.kredit || 0), 0);
+
+
   projectInfo = pData;
 
   const { data: eData } = await supabase
@@ -55,9 +61,13 @@ if (selectedProjectId) {
   // C. Gabungan Total Cost (Material + Jasa)
   totalKredit = totalMaterial + totalJasa;
 
+    let sisaJasa = 0;
   if (projectInfo) {
     profit = projectInfo.nilai_project - totalKredit;
     margin = projectInfo.nilai_project > 0 ? (profit / projectInfo.nilai_project) * 100 : 0;
+
+    // Sisa Jasa = Plafon PO Jasa dari database dikurangi total yang sudah dibayar
+    sisaJasa = (projectInfo.po_jasa || 0) - totalJasa;
   }
 }
 
@@ -122,7 +132,14 @@ const formatRp = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', 
 
           <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 hover:shadow-md transition-shadow">
             <div class="text-purple-600 text-xs font-bold uppercase tracking-wider mb-2">🛠️ Total Jasa / Tukang</div>
-            <div class="text-xl font-black text-slate-900 font-mono tracking-tight">{formatRp(totalJasa)}</div>
+            <p class="font-mono text-slate-900">{formatRp(totalJasa)}</p>
+            {projectInfo && (
+            <div class="text-xs text-slate-500 pl-4 border-l-2 border-purple-300 mt-1 space-y-0.5">
+              <p>PO Jasa: <span class="font-semibold font-mono text-slate-700">{formatRp(projectInfo.po_jasa || 0)}</span></p>
+              <p>Sisa Dana Jasa: <span class={`font-bold font-mono ${(projectInfo.po_jasa || 0) - totalJasa < 0 ? 'text-red-600' : 'text-purple-600'}`}>{formatRp((projectInfo.po_jasa || 0) - totalJasa)}</span></p>
+            </div>
+            </div>
+            )}
           </div>
 
           <div class="bg-slate-900 p-5 rounded-2xl shadow-xs border border-slate-800 hover:shadow-md transition-shadow text-white">
