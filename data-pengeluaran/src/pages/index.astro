@@ -1,17 +1,207 @@
 ---
-import { supabase } from '../db/supabase';
+// src/pages/index.astro
+import { supabase } from '../db/supabase.js';
 
-const { data, error } = await supabase.from("project").select('*');
+// 1. Ambil daftar semua proyek untuk dropdown
+const { data: allProjects } = await supabase
+  .from('project')
+  .select('project_id, nama_project')
+  .order('nama_project', { ascending: true });
+
+// 2. Ambil ID proyek yang sedang dipilih dari URL (misal: ?project_id=5)
+const url = new URL(Astro.request.url);
+const selectedProjectId = url.searchParams.get('project_id');
+
+let projectInfo = null;
+let expenses = [];
+let totalKredit = 0;
+let totalMaterial = 0;
+let totalJasa = 0;
+let profit = 0;
+let margin = 0;
+
+// 3. Jika user sudah memilih proyek, ambil datanya
+if (selectedProjectId) {
+  const { data: pData } = await supabase
+    .from('project')
+    .select('*')
+    .eq('project_id', selectedProjectId)
+    .single();
+  
+  projectInfo = pData;
+
+  const { data: eData } = await supabase
+    .from('pengeluaran')
+    .select('*')
+    .eq('project_id', selectedProjectId)
+    .order('date', { ascending: false });
+  
+  expenses = eData || [];
+
+  // ==========================================
+  // LOGIKA FILTER & GABUNGAN (SUM) DI ASTRO
+  // ==========================================
+  
+  // A. Filter & SUM Khusus Material
+  totalMaterial = expenses
+    .filter(item => item.kategori === 'material')
+    .reduce((acc, curr) => acc + (curr.kredit || 0), 0);
+
+  // B. Filter & SUM Khusus Jasa
+  totalJasa = expenses
+    .filter(item => item.kategori === 'jasa')
+    .reduce((acc, curr) => acc + (curr.kredit || 0), 0);
+
+  // C. Gabungan Total Cost (Material + Jasa)
+  totalKredit = totalMaterial + totalJasa;
+
+  if (projectInfo) {
+    profit = projectInfo.nilai_project - totalKredit;
+    margin = projectInfo.nilai_project > 0 ? (profit / projectInfo.nilai_project) * 100 : 0;
+  }
+}
+
+// Helper format Rupiah
+const formatRp = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
 ---
 
-{
-  (
-    <ul>
-  {data && data.map((entry) => (
-    <li>{entry.name}</li>
-  ))}
-  
-  {!data && <li class="text-red-500">Data gagal dimuat atau tabel tidak ditemukan!</li>}
-</ul>
-  )
-}
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Monitoring Proyek</title>
+</head>
+<body class="bg-slate-100 min-h-screen font-sans antialiased text-slate-800">
+
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-black tracking-tight text-slate-900">📊 Monitoring Profitabilitas</h1>
+        <p class="text-slate-500 text-sm mt-0.5">Pilih proyek untuk melihat laporan keuangan real-time</p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <form method="GET" class="flex items-center">
+          <select 
+            name="project_id" 
+            onchange="this.form.submit()" 
+            class="bg-slate-50 border border-slate-300 text-slate-700 py-2 px-4 pr-8 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer font-medium text-sm transition"
+          >
+            <option value="">-- Pilih Proyek --</option>
+            {allProjects?.map((p) => (
+              <option value={p.project_id} selected={selectedProjectId == p.project_id}>
+                {p.nama_project}
+              </option>
+            ))}
+          </select>
+        </form>
+        <a href="/input" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm shadow-blue-200 transition-all active:scale-95">
+          + Input Pengeluaran Project Baru
+        </a>
+        <br>
+        <a href="/form-project" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm shadow-blue-200 transition-all active:scale-95">
+          + Input Project Baru
+        </a>
+      </div>
+    </div>
+
+    {selectedProjectId ? (
+      <>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          
+          <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 hover:shadow-md transition-shadow">
+            <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Nilai Project (PO)</div>
+            <div class="text-xl font-black text-slate-900 font-mono tracking-tight">{formatRp(projectInfo?.nilai_project || 0)}</div>
+          </div>
+          
+          <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 hover:shadow-md transition-shadow">
+            <div class="text-amber-600 text-xs font-bold uppercase tracking-wider mb-2">📦 Total Material</div>
+            <div class="text-xl font-black text-slate-900 font-mono tracking-tight">{formatRp(totalMaterial)}</div>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 hover:shadow-md transition-shadow">
+            <div class="text-purple-600 text-xs font-bold uppercase tracking-wider mb-2">🛠️ Total Jasa / Tukang</div>
+            <div class="text-xl font-black text-slate-900 font-mono tracking-tight">{formatRp(totalJasa)}</div>
+          </div>
+
+          <div class="bg-slate-900 p-5 rounded-2xl shadow-xs border border-slate-800 hover:shadow-md transition-shadow text-white">
+            <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">💰 Total Cost (Gabungan)</div>
+            <div class="text-xl font-black text-red-400 font-mono tracking-tight">{formatRp(totalKredit)}</div>
+          </div>
+
+          <div class="bg-emerald-50 border border-emerald-200 p-5 rounded-2xl shadow-xs hover:shadow-md transition-shadow">
+            <div class="text-emerald-700 text-xs font-bold uppercase tracking-wider mb-2">Net Profit ({margin.toFixed(1)}%)</div>
+            <div class="text-xl font-black text-emerald-600 font-mono tracking-tight">{formatRp(profit)}</div>
+          </div>
+          
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/50">
+            <div>
+              <h3 class="font-bold text-slate-800 text-lg">Rincian Transaksi: <span class="text-blue-600 font-extrabold">{projectInfo?.nama_project}</span></h3>
+              <p class="text-slate-400 text-xs mt-0.5">Daftar item logistik material dan sub-kontraktor lapangan</p>
+            </div>
+            <span class="inline-flex self-start sm:self-auto bg-blue-50 text-blue-700 text-xs px-3 py-1 rounded-full font-bold tracking-wide">
+              {expenses.length} Transaksi
+            </span>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse whitespace-nowrap border border-slate-200">
+              <thead>
+                <tr class="bg-slate-100/70 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200 divide-x divide-slate-200">
+                  <th class="p-4 pl-6">Tanggal</th>
+                  <th class="p-4">Kategori</th>
+                  <th class="p-4">PIC</th>
+                  <th class="p-4">Keterangan / Keperluan</th>
+                  <th class="p-4 pr-6 text-right">Nominal (Kredit)</th>
+                </tr>
+              </thead>
+              <tbody class="text-slate-700 divide-y divide-x divide-slate-200">
+                {expenses.map((e) => (
+                  <tr class="hover:bg-slate-50/80 transition-colors group">
+                    <td class="p-4 pl-6 text-sm text-slate-500 font-mono">{e.date}</td>
+                    
+                    <td class="p-4">
+                      {e.kategori === 'jasa' ? (
+                        <span class="bg-purple-50 text-purple-700 text-[11px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider border border-purple-200">🛠️ Jasa</span>
+                      ) : (
+                        <span class="bg-amber-50 text-amber-700 text-[11px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider border border-amber-200">📦 Material</span>
+                      )}
+                    </td>
+
+                    <td class="p-4 font-semibold text-slate-900">{e.pic || '-'}</td>
+                    <td class="p-4 text-sm text-slate-600 max-w-xs truncate group-hover:text-slate-900 transition-colors">{e.keterangan || '-'}</td>
+                    <td class="p-4 pr-6 text-right font-mono font-bold text-slate-900">{formatRp(e.kredit)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            {expenses.length === 0 && (
+              <div class="py-16 text-center text-slate-400">
+                <div class="text-4xl mb-2">📁</div>
+                <p class="text-sm font-medium">Belum ada data pengeluaran untuk proyek ini.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </>
+    ) : (
+      <div class="bg-white py-24 px-6 rounded-3xl border-2 border-dashed border-slate-200 text-center max-w-xl mx-auto mt-12 shadow-xs">
+        <div class="w-16 h-16 bg-blue-50 text-blue-600 text-3xl flex items-center justify-center rounded-2xl mx-auto mb-4 font-bold shadow-inner">
+          📊
+        </div>
+        <h2 class="text-xl font-extrabold text-slate-800 tracking-tight">Laporan Keuangan Kosong</h2>
+        <p class="text-slate-400 text-sm max-w-sm mx-auto mt-2 leading-relaxed">
+          Silakan gunakan menu *dropdown* di atas untuk memuat matriks profitabilitas dan tabel rincian transaksi proyek.
+        </p>
+      </div>
+    )}
+
+  </div>
+
+</body>
+</html>
