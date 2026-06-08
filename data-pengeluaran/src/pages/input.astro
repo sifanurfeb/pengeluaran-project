@@ -2,32 +2,65 @@
 // src/pages/input.astro
 import { supabase } from '../db/supabase.js';
 
-// Ambil daftar proyek untuk dropdown
+export const prerender = false;
+
+// 1. Ambil daftar proyek untuk dropdown
 const { data: projects } = await supabase
   .from('project') 
   .select('project_id, nama_project')
   .order('nama_project', { ascending: true });
+
+// 2. Baca parameter ID dari URL jika dalam mode Edit
+const url = new URL(Astro.request.url);
+const editId = url.searchParams.get('id');
+
+let dataLama = null;
+let isEdit = false;
+
+if (editId && editId !== 'undefined') {
+  isEdit = true;
+  const targetId = parseInt(editId); 
+
+  // Mengambil detail data pengeluaran lama berdasarkan ID
+  const { data, error } = await supabase
+    .from('pengeluaran') 
+    .select('*')
+    // Blok pencarian fleksibel mendeteksi nama kolom ID Anda di database
+    .or(`id.eq.${targetId},pengeluaran_id.eq.${targetId},id_pengeluaran.eq.${targetId}`)
+    .maybeSingle(); 
+    
+  if (!error && data) {
+    dataLama = data;
+  } else if (error) {
+    console.error("Gagal mengambil data lama:", error.message);
+  }
+}
 ---
 
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Input Pengeluaran Proyek</title>
+  <title>{isEdit ? "Edit Pengeluaran" : "Input Pengeluaran"}</title>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
+<body class="bg-slate-100 min-h-screen flex flex-col items-center justify-center p-6 font-sans">
 
-  <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-md mx-auto">
-    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Input Pengeluaran</h2>
+  <div class="bg-white p-8 rounded-2xl shadow-md border border-slate-200 w-full max-w-md mx-auto">
+    <h2 class="text-2xl font-black text-slate-900 mb-6 text-center tracking-tight">
+      {isEdit ? "✏️ Edit Pengeluaran Project" : "📝 Input Pengeluaran Project"}
+    </h2>
 
     <form id="expenseForm" class="space-y-4">
+      <input type="hidden" id="edit_id" value={isEdit ? editId : ''} />
       
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-1">Pilih Proyek *</label>
         <select id="project_id" required class="w-full p-2.5 border border-gray-300 rounded-lg bg-white">
           <option value="">-- Pilih Proyek --</option>
           {projects?.map((project) => (
-            <option value={project.project_id}>{project.nama_project}</option>
+            <option value={project.project_id} selected={dataLama?.project_id?.toString() === project.project_id?.toString()}>
+              {project.nama_project}
+            </option>
           ))}
         </select>
       </div>
@@ -35,90 +68,84 @@ const { data: projects } = await supabase
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-1">Kategori Pengeluaran *</label>
         <select id="kategori" required class="w-full p-2.5 border border-gray-300 rounded-lg bg-white">
-          <option value=""> -- Pilih Kategori --</option>
-          <option value="material">📦 Material / Logistik</option>
-          <option value="jasa">🛠️ Jasa / Tukang / Subkon</option>
+          <option value="">-- Pilih Kategori --</option>
+          <option value="material" selected={dataLama?.kategori === 'material'}>📦 Material / Logistik</option>
+          <option value="jasa" selected={dataLama?.kategori === 'jasa'}>🛠️ Jasa / Tukang / Subkon</option>
         </select>
       </div>
 
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal *</label>
-        <input type="date" id="date" required class="w-full p-2.5 border border-gray-300 rounded-lg" />
+        <input type="date" id="date" required value={dataLama?.date || ''} class="w-full p-2.5 border border-gray-300 rounded-lg" />
       </div>
 
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-1">PIC (Nama)</label>
-        <input type="text" id="pic" placeholder="Contoh: ujang" class="w-full p-2.5 border border-gray-300 rounded-lg" />
+        <input type="text" id="pic" value={dataLama?.pic || ''} placeholder="Contoh: ujang" class="w-full p-2.5 border border-gray-300 rounded-lg" />
       </div>
 
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-1">Keterangan</label>
-        <textarea id="keterangan" placeholder="Contoh: beli material atau ongkos tukang" rows="3" class="w-full p-2.5 border border-gray-300 rounded-lg"></textarea>
+        <textarea id="keterangan" placeholder="Contoh: beli material" rows="3" class="w-full p-2.5 border border-gray-300 rounded-lg">{dataLama?.keterangan || ''}</textarea>
       </div>
 
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-1">Jumlah Uang / Kredit (Rp) *</label>
-        <input type="number" id="kredit" required min="0" placeholder="Contoh: 1500000" class="w-full p-2.5 border border-gray-300 rounded-lg" />
+        <input type="number" id="kredit" required min="0" value={dataLama?.kredit || ''} placeholder="Contoh: 1500000" class="w-full p-2.5 border border-gray-300 rounded-lg" />
       </div>
 
-      <button type="submit" id="btnSubmit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold p-3 rounded-lg transition duration-200 mt-4">
-        Simpan Pengeluaran
+      <button type="submit" id="btnSubmit" class={`w-full text-white font-bold p-3 rounded-lg transition mt-4 ${isEdit ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
+        {isEdit ? "Update Pengeluaran" : "Simpan Pengeluaran"}
       </button>
-      
     </form>
   </div>
 
-  <script>
-    // Otomatis bersihkan URL dari sisa parameter error lawas jika ada
-    if (window.location.search) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
+  <div class="mt-6">
+    <a href="/" class="text-sm font-bold text-slate-500 hover:underline">Back to Dashboard</a>
+  </div>
 
-    const form = document.getElementById('expenseForm');
-    const btnSubmit = document.getElementById('btnSubmit');
+  <script>
+    const form = document.getElementById('expenseForm') as HTMLFormElement;
+    const btnSubmit = document.getElementById('btnSubmit') as HTMLButtonElement;
 
     form.addEventListener('submit', async (e) => {
-      e.preventDefault(); // Cegah browser reload halaman
-      
+      e.preventDefault(); 
       btnSubmit.disabled = true;
-      btnSubmit.innerText = 'Menyimpan...';
+      btnSubmit.innerText = 'Memproses...';
 
-      // Kumpulkan data termasuk nilai dropdown KATEGORI yang baru
+      const editId = (document.getElementById('edit_id') as HTMLInputElement).value;
+
       const dataKirim = {
-        project_id: document.getElementById('project_id').value,
-        kategori: document.getElementById('kategori').value, // <-- IKUT DIKIRIM
-        date: document.getElementById('date').value,
-        pic: document.getElementById('pic').value,
-        keterangan: document.getElementById('keterangan').value,
-        kredit: document.getElementById('kredit').value
+        id: editId ? editId : undefined, 
+        project_id: (document.getElementById('project_id') as HTMLSelectElement).value,
+        kategori: (document.getElementById('kategori') as HTMLSelectElement).value, 
+        date: (document.getElementById('date') as HTMLInputElement).value,
+        pic: (document.getElementById('pic') as HTMLInputElement).value,
+        keterangan: (document.getElementById('keterangan') as HTMLTextAreaElement).value,
+        kredit: (document.getElementById('kredit') as HTMLInputElement).value
       };
 
       try {
         const response = await fetch('/api/function', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(dataKirim)
         });
 
         const hasil = await response.json();
-
         if (response.ok && hasil.success) {
-          alert('🔥 Sukses! Data pengeluaran berhasil disimpan ke database.');
-          form.reset(); // Kosongkan isi form kembali setelah sukses
+          alert(editId ? '🎉 Perubahan data pengeluaran berhasil disimpan!' : '🚀 Data pengeluaran baru berhasil ditambahkan!');
+          window.location.href = `/?project_id=${dataKirim.project_id}`; 
         } else {
-          alert('❌ Gagal Menyimpan: ' + (hasil.message || 'Terjadi kesalahan sistem.'));
+          alert('❌ Gagal: ' + hasil.message);
         }
-      } catch (err) {
+      } catch (err: any) {
         alert('⚠️ Gagal Koneksi: ' + err.message);
       } finally {
         btnSubmit.disabled = false;
-        btnSubmit.innerText = 'Simpan Pengeluaran';
+        btnSubmit.innerText = editId ? 'Update Pengeluaran' : 'Simpan Pengeluaran';
       }
     });
   </script>
-
-<button><a href="/">Dashboard</a></button>
 </body>
 </html>

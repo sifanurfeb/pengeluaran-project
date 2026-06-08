@@ -2,6 +2,8 @@
 // src/pages/index.astro
 import { supabase } from '../db/supabase.js';
 
+export const prerender = false;
+
 // 1. Ambil daftar semua proyek untuk dropdown
 const { data: allProjects } = await supabase
   .from('project')
@@ -27,12 +29,6 @@ if (selectedProjectId) {
     .select('*')
     .eq('project_id', selectedProjectId)
     .single();
-
-  // 1. Hitung total pengeluaran jasa dari database (Sudah berjalan di tempat Anda)
-  totalJasa = expenses
-    .filter(item => item.kategori === 'jasa')
-    .reduce((acc, curr) => acc + (curr.kredit || 0), 0);
-
 
   projectInfo = pData;
 
@@ -61,7 +57,7 @@ if (selectedProjectId) {
   // C. Gabungan Total Cost (Material + Jasa)
   totalKredit = totalMaterial + totalJasa;
 
-    let sisaJasa = 0;
+  let sisaJasa = 0;
   if (projectInfo) {
     profit = projectInfo.nilai_project - totalKredit;
     margin = projectInfo.nilai_project > 0 ? (profit / projectInfo.nilai_project) * 100 : 0;
@@ -132,12 +128,11 @@ const formatRp = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', 
 
           <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 hover:shadow-md transition-shadow">
             <div class="text-purple-600 text-xs font-bold uppercase tracking-wider mb-2">🛠️ Total Jasa / Tukang</div>
-            <p class="font-mono text-slate-900">{formatRp(totalJasa)}</p>
+            <p class="font-mono text-xl font-black text-slate-900 tracking-tight">{formatRp(totalJasa)}</p>
             {projectInfo && (
             <div class="text-xs text-slate-500 pl-4 border-l-2 border-purple-300 mt-1 space-y-0.5">
               <p>PO Jasa: <span class="font-semibold font-mono text-slate-700">{formatRp(projectInfo.po_jasa || 0)}</span></p>
               <p>Sisa Dana Jasa: <span class={`font-bold font-mono ${(projectInfo.po_jasa || 0) - totalJasa < 0 ? 'text-red-600' : 'text-purple-600'}`}>{formatRp((projectInfo.po_jasa || 0) - totalJasa)}</span></p>
-            </div>
             </div>
             )}
           </div>
@@ -173,7 +168,8 @@ const formatRp = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', 
                   <th class="p-4">Kategori</th>
                   <th class="p-4">PIC</th>
                   <th class="p-4">Keterangan / Keperluan</th>
-                  <th class="p-4 pr-6 text-right">Nominal (Kredit)</th>
+                  <th class="p-4 text-right">Nominal (Kredit)</th>
+                  <th class="p-4 pr-6 text-center">Aksi</th> 
                 </tr>
               </thead>
               <tbody class="text-slate-700 divide-y divide-x divide-slate-200">
@@ -191,7 +187,25 @@ const formatRp = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', 
 
                     <td class="p-4 font-semibold text-slate-900">{e.pic || '-'}</td>
                     <td class="p-4 text-sm text-slate-600 max-w-xs truncate group-hover:text-slate-900 transition-colors">{e.keterangan || '-'}</td>
-                    <td class="p-4 pr-6 text-right font-mono font-bold text-slate-900">{formatRp(e.kredit)}</td>
+                    <td class="p-4 text-right font-mono font-bold text-slate-900">{formatRp(e.kredit)}</td>
+                    
+                    <td class="p-4 pr-6 text-center">
+                      <div class="inline-flex gap-2">
+                        <a 
+                          href={`/input?id=${e.id}`} 
+                          class="bg-amber-500 hover:bg-amber-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95"
+                        >
+                          ✏️ Edit
+                        </a>
+                        <button 
+                          onclick={`hapusTransaksi(${e.id})`}
+                          class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95"
+                        >
+                          🗑️ Hapus
+                        </button>
+                      </div>
+                    </td>
+                    
                   </tr>
                 ))}
               </tbody>
@@ -220,5 +234,31 @@ const formatRp = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', 
 
   </div>
 
+  <script>
+    (window as any).hapusTransaksi = async (id: number) => {
+      if (!confirm('Apakah Anda yakin ingin menghapus data transaksi pengeluaran ini secara permanen dari dashboard?')) return;
+
+      try {
+        const response = await fetch('/api/function', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id: id }) // Mengirimkan ID pengeluaran untuk di-handle backend function.js
+        });
+
+        const hasil = await response.json();
+
+        if (response.ok && hasil.success) {
+          alert('🗑️ Sukses! Data transaksi berhasil dihapus.');
+          window.location.reload(); // Refresh halaman agar nominal box & tabel langsung tersinkron ulang
+        } else {
+          alert('❌ Gagal Menghapus: ' + (hasil.message || 'Terjadi kesalahan internal.'));
+        }
+      } catch (err: any) {
+        alert('⚠️ Gagal Hubungan Koneksi: ' + err.message);
+      }
+    };
+  </script>
 </body>
 </html>
