@@ -4,13 +4,13 @@ import { supabase } from '../db/supabase.js';
 
 export const prerender = false;
 
-// 1. Ambil daftar proyek untuk dropdown
+// 1. Ambil daftar proyek untuk isi dropdown
 const { data: projects } = await supabase
   .from('project') 
   .select('project_id, nama_project')
   .order('nama_project', { ascending: true });
 
-// 2. Baca parameter ID dari URL jika dalam mode Edit
+// 2. Baca parameter ID dari URL jika dalam mode Edit (?id=...)
 const url = new URL(Astro.request.url);
 const editId = url.searchParams.get('id');
 
@@ -21,12 +21,11 @@ if (editId && editId !== 'undefined') {
   isEdit = true;
   const targetId = parseInt(editId); 
 
-  // Mengambil detail data pengeluaran lama berdasarkan ID
+  // Ambil detail data pengeluaran lama berdasarkan expense_id
   const { data, error } = await supabase
     .from('pengeluaran') 
     .select('*')
-    // Blok pencarian fleksibel mendeteksi nama kolom ID Anda di database
-    .or(`id.eq.${targetId},pengeluaran_id.eq.${targetId},id_pengeluaran.eq.${targetId}`)
+    .eq('expense_id', targetId) 
     .maybeSingle(); 
     
   if (!error && data) {
@@ -51,7 +50,8 @@ if (editId && editId !== 'undefined') {
     </h2>
 
     <form id="expenseForm" class="space-y-4">
-      <input type="hidden" id="edit_id" value={isEdit ? editId : ''} />
+      
+      <input type="hidden" id="edit_id" value={editId || ''} />
       
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-1">Pilih Proyek *</label>
@@ -81,12 +81,12 @@ if (editId && editId !== 'undefined') {
 
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-1">PIC (Nama)</label>
-        <input type="text" id="pic" value={dataLama?.pic || ''} placeholder="Contoh: ujang" class="w-full p-2.5 border border-gray-300 rounded-lg" />
+        <input type="text" id="pic" value={dataLama?.pic || ''} placeholder="Contoh: Ujang" class="w-full p-2.5 border border-gray-300 rounded-lg" />
       </div>
 
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1">Keterangan</label>
-        <textarea id="keterangan" placeholder="Contoh: beli material" rows="3" class="w-full p-2.5 border border-gray-300 rounded-lg">{dataLama?.keterangan || ''}</textarea>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Keterangan / Keperluan</label>
+        <textarea id="keterangan" placeholder="Contoh: Pembelian Semen" rows="3" class="w-full p-2.5 border border-gray-300 rounded-lg">{dataLama?.keterangan || ''}</textarea>
       </div>
 
       <div>
@@ -95,13 +95,16 @@ if (editId && editId !== 'undefined') {
       </div>
 
       <button type="submit" id="btnSubmit" class={`w-full text-white font-bold p-3 rounded-lg transition mt-4 ${isEdit ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
-        {isEdit ? "Update Pengeluaran" : "Simpan Pengeluaran"}
+        {isEdit ? "🔄 Update Pengeluaran" : "💾 Simpan Pengeluaran"}
       </button>
+      
     </form>
   </div>
 
   <div class="mt-6">
-    <a href="/" class="text-sm font-bold text-slate-500 hover:underline">Back to Dashboard</a>
+    <a href="/" class="text-sm font-bold text-slate-500 hover:underline">
+      ⬅️ Kembali ke Dashboard
+    </a>
   </div>
 
   <script>
@@ -110,11 +113,12 @@ if (editId && editId !== 'undefined') {
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault(); 
+      
       btnSubmit.disabled = true;
-      btnSubmit.innerText = 'Memproses...';
-
       const editId = (document.getElementById('edit_id') as HTMLInputElement).value;
+      btnSubmit.innerText = editId ? 'Memperbarui...' : 'Mennyimpan...';
 
+      // Membaca isi inputan saat tombol ditekan oleh user
       const dataKirim = {
         id: editId ? editId : undefined, 
         project_id: (document.getElementById('project_id') as HTMLSelectElement).value,
@@ -133,14 +137,16 @@ if (editId && editId !== 'undefined') {
         });
 
         const hasil = await response.json();
+
         if (response.ok && hasil.success) {
           alert(editId ? '🎉 Perubahan data pengeluaran berhasil disimpan!' : '🚀 Data pengeluaran baru berhasil ditambahkan!');
+          // Otomatis kembali ke dashboard dengan mempertahankan filter project yang diedit
           window.location.href = `/?project_id=${dataKirim.project_id}`; 
         } else {
-          alert('❌ Gagal: ' + hasil.message);
+          alert('❌ Gagal: ' + (hasil.message || 'Terjadi kesalahan server.'));
         }
       } catch (err: any) {
-        alert('⚠️ Gagal Koneksi: ' + err.message);
+        alert('⚠️ Gagal Hubungan Koneksi: ' + err.message);
       } finally {
         btnSubmit.disabled = false;
         btnSubmit.innerText = editId ? 'Update Pengeluaran' : 'Simpan Pengeluaran';

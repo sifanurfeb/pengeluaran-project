@@ -67,12 +67,15 @@ export const POST = async ({ request }) => {
       kredit: parseFloat(kredit.toString()),
     };
 
-    if (id) {
+    if (id && id !== "undefined") {
+      //logika update jika ada parameter id
+      const targetID = parseInt(id.toString());
+
       // --- AKSI 2A: UPDATE PENGELUARAN (Jika ada ID) ---
       const { error: updateExpenseError } = await supabase
         .from('pengeluaran')
         .update(dataPayload)
-        .eq('id', id); 
+        .eq('expense_id', id); 
 
       if (updateExpenseError) throw updateExpenseError;
 
