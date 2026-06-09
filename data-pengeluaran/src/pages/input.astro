@@ -1,4 +1,6 @@
 ---
+export const prerender = false;
+
 // src/pages/input.astro
 import { supabase } from '../db/supabase.js';
 
@@ -139,12 +141,19 @@ if (editId && editId !== 'undefined') {
         const hasil = await response.json();
 
         if (response.ok && hasil.success) {
-          alert(editId ? '🎉 Perubahan data pengeluaran berhasil disimpan!' : '🚀 Data pengeluaran baru berhasil ditambahkan!');
-          // Otomatis kembali ke dashboard dengan mempertahankan filter project yang diedit
-          window.location.href = `/?project_id=${dataKirim.project_id}`; 
-        } else {
-          alert('❌ Gagal: ' + (hasil.message || 'Terjadi kesalahan server.'));
-        }
+    if (editId) {
+      // MODE EDIT: Jika selesai mengedit data lama, tetap lebih baik kembali ke dashboard
+      alert('🎉 Sukses! Perubahan data berhasil disimpan.');
+      window.location.href = `/?project_id=${dataKirim.project_id}`; 
+    } else {
+      // MODE INPUT BARU: Form dikosongkan agar Anda bisa langsung ketik pengeluaran selanjutnya
+      alert('🚀 Sukses! Data pengeluaran baru berhasil ditambahkan.');
+      form.reset(); // <-- Mengosongkan semua kotak form (dropdown, teks, nominal) secara instan
+    }
+  } else {
+    alert('❌ Gagal: ' + (hasil.message || 'Terjadi kesalahan server.'));
+  }
+
       } catch (err: any) {
         alert('⚠️ Gagal Hubungan Koneksi: ' + err.message);
       } finally {
