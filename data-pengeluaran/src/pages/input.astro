@@ -4,8 +4,6 @@ export const prerender = false;
 // src/pages/input.astro
 import { supabase } from '../db/supabase.js';
 
-export const prerender = false;
-
 // 1. Ambil daftar proyek untuk isi dropdown
 const { data: projects } = await supabase
   .from('project') 
