@@ -69,6 +69,14 @@ if (selectedProjectId) {
 
 // Helper format Rupiah
 const formatRp = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
+// Helper format Tanggal jadi "17 Jun"
+const formatTanggalSingkat = (tanggalString) => {
+  if (!tanggalString) return '-';
+  const date = new Date(tanggalString);
+  const hari = date.getDate();
+  const bulanSingkat = date.toLocaleDateString('id-ID', { month: 'short' });
+  return `${hari} ${bulanSingkat}`;
+}
 ---
 
 <html lang="id">
@@ -175,7 +183,7 @@ const formatRp = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', 
               <tbody class="text-slate-700 divide-y divide-x divide-slate-200">
                 {expenses.map((e) => (
                   <tr class="hover:bg-slate-50/80 transition-colors group">
-                    <td class="p-4 pl-6 text-sm text-slate-500 font-mono">{e.date}</td>
+                    <td class="p-4 pl-6 text-sm text-slate-500 font-mono">{formatTanggalSingkat(e.date)}</td>
                     
                     <td class="p-4">
                       {e.kategori === 'jasa' ? (
