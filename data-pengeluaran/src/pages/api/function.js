@@ -143,7 +143,7 @@ export const DELETE = async ({ request }) => {
       const { error } = await supabase
         .from('pengeluaran')
         .delete()
-        .eq('id', body.id);
+        .eq('expense_id', body.id);
 
       if (error) throw error;
       return new Response(JSON.stringify({ success: true, message: 'Pengeluaran berhasil dihapus' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
