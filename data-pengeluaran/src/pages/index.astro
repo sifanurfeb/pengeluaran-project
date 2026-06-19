@@ -315,9 +315,6 @@ const formatTanggalSingkat = (tanggalString) => {
   </div>
 
   <script>
-      // =====================
-  // HAPUS TRANSAKSI
-  // =====================
   (window as any).hapusTransaksi = async (id: number) => {
     if (!confirm('Apakah Anda yakin ingin menghapus data transaksi pengeluaran ini secara permanen dari dashboard?')) return;
 
@@ -343,10 +340,7 @@ const formatTanggalSingkat = (tanggalString) => {
     }
   };
 
-  // =====================
-  // FILTER KATEGORI
-  // =====================
-  (window as any).filterKategori = (kategori: string) => {
+(window as any).filterKategori = (kategori: string) => {
     const rows = document.querySelectorAll('.expense-row');
     rows.forEach((row: Element) => {
       const htmlRow = row as HTMLElement;
@@ -370,40 +364,41 @@ const formatTanggalSingkat = (tanggalString) => {
       if (kategori === 'material') activeBtn.classList.add('bg-amber-500', 'text-white');
       if (kategori === 'jasa') activeBtn.classList.add('bg-purple-500', 'text-white');
     }
-    
-  const rows = document.querySelectorAll('.expense-row');
-  const visibleRows: string[][] = [];
+  };
+  (window as any).exportCSV = () => {
+    const rows = document.querySelectorAll('.expense-row');
+    const visibleRows: string[][] = [];
 
-  // Header kolom
-  visibleRows.push(['Tanggal', 'Kategori', 'PIC', 'Keterangan', 'Nominal (Kredit)']);
+    // Header kolom
+    visibleRows.push(['Tanggal', 'Kategori', 'PIC', 'Keterangan', 'Nominal (Kredit)']);
 
-  rows.forEach((row: Element) => {
-    const htmlRow = row as HTMLElement;
-    if (htmlRow.style.display === 'none') return; // Skip yang disembunyikan filter
+    rows.forEach((row: Element) => {
+      const htmlRow = row as HTMLElement;
+      if (htmlRow.style.display === 'none') return; // Skip yang disembunyikan filter
 
-    const cells = htmlRow.querySelectorAll('td');
-    const tanggal = cells[0]?.textContent?.trim() || '';
-    const kategori = cells[1]?.textContent?.trim() || '';
-    const pic = cells[2]?.textContent?.trim() || '';
-    const keterangan = cells[3]?.textContent?.trim() || '';
-    const nominal = cells[4]?.textContent?.trim() || '';
+      const cells = htmlRow.querySelectorAll('td');
+      const tanggal = cells[0]?.textContent?.trim() || '';
+      const kategori = cells[1]?.textContent?.trim() || '';
+      const pic = cells[2]?.textContent?.trim() || '';
+      const keterangan = cells[3]?.textContent?.trim() || '';
+      const nominal = cells[4]?.textContent?.trim() || '';
 
-    visibleRows.push([tanggal, kategori, pic, keterangan, nominal]);
-  });
+      visibleRows.push([tanggal, kategori, pic, keterangan, nominal]);
+    });
 
-  // Konversi ke format CSV
-  const csvContent = visibleRows
-    .map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(','))
-    .join('\n');
+    // Konversi ke format CSV
+    const csvContent = visibleRows
+      .map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(','))
+      .join('\n');
 
-  // Download file
-  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `transaksi-${new Date().toISOString().slice(0, 10)}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
+    // Download file
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `transaksi-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
     
   </script>
