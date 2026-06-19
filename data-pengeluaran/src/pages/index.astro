@@ -235,6 +235,9 @@ const formatTanggalSingkat = (tanggalString) => {
                 <button onclick="filterKategori('material')" id="btn-material" class="filter-btn bg-amber-100 text-amber-700 text-xs px-3 py-1.5 rounded-full font-bold hover:bg-amber-200">📦 Material (<span id="count-material">{expenses.filter(e => e.kategori === 'material').length}</span>)</button>
                 <button onclick="filterKategori('jasa')" id="btn-jasa" class="filter-btn bg-purple-100 text-purple-700 text-xs px-3 py-1.5 rounded-full font-bold hover:bg-purple-200">🛠️ Jasa (<span id="count-jasa">{expenses.filter(e => e.kategori === 'jasa').length}</span>)</button>
               </div>
+              <button onclick="exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-full font-bold transition active:scale-95">
+                📥 Export CSV
+              </button>
             </div>
 
           <div class="overflow-x-auto">
@@ -367,6 +370,40 @@ const formatTanggalSingkat = (tanggalString) => {
       if (kategori === 'material') activeBtn.classList.add('bg-amber-500', 'text-white');
       if (kategori === 'jasa') activeBtn.classList.add('bg-purple-500', 'text-white');
     }
+    
+  const rows = document.querySelectorAll('.expense-row');
+  const visibleRows: string[][] = [];
+
+  // Header kolom
+  visibleRows.push(['Tanggal', 'Kategori', 'PIC', 'Keterangan', 'Nominal (Kredit)']);
+
+  rows.forEach((row: Element) => {
+    const htmlRow = row as HTMLElement;
+    if (htmlRow.style.display === 'none') return; // Skip yang disembunyikan filter
+
+    const cells = htmlRow.querySelectorAll('td');
+    const tanggal = cells[0]?.textContent?.trim() || '';
+    const kategori = cells[1]?.textContent?.trim() || '';
+    const pic = cells[2]?.textContent?.trim() || '';
+    const keterangan = cells[3]?.textContent?.trim() || '';
+    const nominal = cells[4]?.textContent?.trim() || '';
+
+    visibleRows.push([tanggal, kategori, pic, keterangan, nominal]);
+  });
+
+  // Konversi ke format CSV
+  const csvContent = visibleRows
+    .map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+
+  // Download file
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `transaksi-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
   };
     
   </script>
