@@ -169,53 +169,52 @@ const formatTanggalSingkat = (tanggalString) => {
           </div>
           
           <div class="overflow-x-auto">
-            <table class="w-full text-left border-base-content/25 overflow-x-auto border ">
+            <table class="w-full text-left border-collapse border border-slate-300">
               <thead>
-                <tr class="bg-slate-100/70 text-slate-600 text-xs font-bold uppercase tracking-wider border-base-content/25 divide-x divide-slate-200">
-                  <th class="p-4 pl-6">Tanggal</th>
-                  <th class="p-4">Kategori</th>
-                  <th class="p-4">PIC</th>
-                  <th class="p-4">Keterangan / Keperluan</th>
-                  <th class="p-4 text-right">Nominal (Kredit)</th>
-                  <th class="p-4 pr-6 text-center">Aksi</th> 
-                </tr>
+              <tr class="bg-slate-100/70 text-slate-600 text-xs font-bold uppercase tracking-wider">
+                <th class="p-4 pl-6 border border-slate-300">Tanggal</th>
+                <th class="p-4 border border-slate-300">Kategori</th>
+                <th class="p-4 border border-slate-300">PIC</th>
+                <th class="p-4 border border-slate-300">Keterangan / Keperluan</th>
+                <th class="p-4 text-right border border-slate-300">Nominal (Kredit)</th>
+                <th class="p-4 pr-6 text-center border border-slate-300">Aksi</th>
+              </tr>
               </thead>
               <tbody class="text-slate-700 divide-y divide-x divide-slate-200">
-                {expenses.map((e) => (
-                  <tr class="hover:bg-slate-50/80 transition-colors group">
-                    <td class="p-4 pl-6 text-sm text-slate-500 font-mono">{formatTanggalSingkat(e.date)}</td>
-                    
-                    <td class="p-4">
-                      {e.kategori === 'jasa' ? (
-                        <span class="bg-purple-50 text-purple-700 text-[11px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider border border-purple-200">🛠️ Jasa</span>
-                      ) : (
-                        <span class="bg-amber-50 text-amber-700 text-[11px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider border border-amber-200">📦 Material</span>
-                      )}
-                    </td>
+                          {expenses.map((e) => (
+              <tr class="hover:bg-slate-50/80 transition-colors group expense-row" data-kategori={e.kategori}>
+                <td class="p-4 pl-6 text-sm text-slate-500 font-mono border border-slate-200">{formatTanggalSingkat(e.date)}</td>
+                
+                <td class="p-4 border border-slate-200">
+                  {e.kategori === 'jasa' ? (
+                    <span class="bg-purple-50 text-purple-700 text-[11px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider border border-purple-200">🛠️ Jasa</span>
+                  ) : (
+                    <span class="bg-amber-50 text-amber-700 text-[11px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider border border-amber-200">📦 Material</span>
+                  )}
+                </td>
 
-                    <td class="p-4 font-semibold text-slate-900">{e.pic || '-'}</td>
-                    <td class="p-4 text-sm text-slate-600 max-w-xs truncate group-hover:text-slate-900 transition-colors">{e.keterangan || '-'}</td>
-                    <td class="p-4 text-right font-mono font-bold text-slate-900">{formatRp(e.kredit)}</td>
-                    
-                    <td class="p-4 pr-6 text-center">
-                      <div class="inline-flex gap-2">
-                        <a 
-                          href={`/input?id=${e.expense_id}`} 
-                          class="bg-amber-500 hover:bg-amber-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95"
-                        >
-                          ✏️ Edit
-                        </a>
-                        <button 
-                          onclick={`hapusTransaksi(${e.expense_id})`}
-                          class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95"
-                        >
-                          🗑️ Hapus
-                        </button>
-                      </div>
-                    </td>
-                    
-                  </tr>
-                ))}
+                <td class="p-4 font-semibold text-slate-900 border border-slate-200">{e.pic || '-'}</td>
+                <td class="p-4 text-sm text-slate-600 max-w-xs truncate group-hover:text-slate-900 transition-colors border border-slate-200">{e.keterangan || '-'}</td>
+                <td class="p-4 text-right font-mono font-bold text-slate-900 border border-slate-200">{formatRp(e.kredit)}</td>
+                
+                <td class="p-4 pr-6 text-center border border-slate-200">
+                  <div class="inline-flex gap-2">
+                    <a 
+                      href={`/input?id=${e.expense_id}`} 
+                      class="bg-amber-500 hover:bg-amber-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95"
+                    >
+                      ✏️ Edit
+                    </a>
+                    <button 
+                      onclick={`hapusTransaksi(${e.expense_id})`}
+                      class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95"
+                    >
+                      🗑️ Hapus
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
               </tbody>
             </table>
             
