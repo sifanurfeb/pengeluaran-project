@@ -3,6 +3,7 @@
 export const prerender = false;
 // src/pages/index.astro
 import { supabase } from '../db/supabase.js';
+import '../styles/global.css';
 
 // 1. Ambil daftar semua proyek untuk dropdown
 const { data: allProjects } = await supabase
