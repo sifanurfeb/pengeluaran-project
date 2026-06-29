@@ -417,35 +417,32 @@ const formatTanggalSingkat = (tanggalString) => {
     link.click();
     URL.revokeObjectURL(url);
   };
-    
-(window as any).hitungUlangMargin = (tanpaJasa) => {
-  const nilaiProject = Number(nilaiProjectVar);
-  const totalMaterialJS = Number(totalMaterialVar);
-  const totalJasaJS = Number(totalJasaVar);
+</script>
 
-  const costAktif = tanpaJasa ? totalMaterialJS : totalMaterialJS + totalJasaJS;
-  const profitAktif = nilaiProject - costAktif;
-  const marginAktif = nilaiProject > 0 ? (profitAktif / nilaiProject) * 100 : 0;
-
-  const formatRp = (angka) =>
-    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
-
-  const elCost = document.getElementById('display-total-cost');
-  const elProfit = document.getElementById('display-profit');
-  const elCostBar = document.getElementById('display-total-cost-bar');
-  const elMargin = document.getElementById('display-margin');
-  const barCost = document.getElementById('bar-cost');
-  const barProfit = document.getElementById('bar-profit');
-
-  if (elCost) elCost.textContent = formatRp(costAktif);
-  if (elCostBar) elCostBar.textContent = formatRp(costAktif);
-  if (elProfit) elProfit.textContent = formatRp(profitAktif);
-  if (elMargin) elMargin.textContent = marginAktif.toFixed(1);
-
-  if (barCost) barCost.style.width = `${Math.min((costAktif / (nilaiProject || 1)) * 100, 100).toFixed(1)}%`;
-  if (barProfit) barProfit.style.width = `${Math.min(Math.abs(profitAktif / (nilaiProject || 1)) * 100, 100).toFixed(1)}%`;
-};
-
+<script define:vars={{ nilaiProjectVar: projectInfo?.nilai_project || 0, totalMaterialVar: totalMaterial, totalJasaVar: totalJasa }}>
+  window.hitungUlangMargin = function(tanpaJasa) {
+    var nilaiProject = Number(nilaiProjectVar);
+    var totalMaterialJS = Number(totalMaterialVar);
+    var totalJasaJS = Number(totalJasaVar);
+    var costAktif = tanpaJasa ? totalMaterialJS : totalMaterialJS + totalJasaJS;
+    var profitAktif = nilaiProject - costAktif;
+    var marginAktif = nilaiProject > 0 ? (profitAktif / nilaiProject) * 100 : 0;
+    var formatRp = function(angka) {
+      return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
+    };
+    var elCost = document.getElementById('display-total-cost');
+    var elCostBar = document.getElementById('display-total-cost-bar');
+    var elProfit = document.getElementById('display-profit');
+    var elMargin = document.getElementById('display-margin');
+    var barCost = document.getElementById('bar-cost');
+    var barProfit = document.getElementById('bar-profit');
+    if (elCost) elCost.textContent = formatRp(costAktif);
+    if (elCostBar) elCostBar.textContent = formatRp(costAktif);
+    if (elProfit) elProfit.textContent = formatRp(profitAktif);
+    if (elMargin) elMargin.textContent = marginAktif.toFixed(1);
+    if (barCost) barCost.style.width = Math.min((costAktif / (nilaiProject || 1)) * 100, 100).toFixed(1) + '%';
+    if (barProfit) barProfit.style.width = Math.min(Math.abs(profitAktif / (nilaiProject || 1)) * 100, 100).toFixed(1) + '%';
+  };
 </script>
 
 </body>
