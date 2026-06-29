@@ -421,27 +421,23 @@ const formatTanggalSingkat = (tanggalString) => {
   </script>
 
 
-// =====================
-// TOGGLE TANPA JASA
-// =====================
-(window as any).hitungUlangMargin = (tanpaJasa: boolean) => {
-  const nilaiProject = Number({`${projectInfo?.nilai_project || 0}`});
-  const totalMaterial = Number({`${totalMaterial}`});
-  const totalJasa = Number({`${totalJasa}`});
+(window as any).hitungUlangMargin = (tanpaJasa) => {
+  const nilaiProject = Number(nilaiProjectVar);
+  const totalMaterialJS = Number(totalMaterialVar);
+  const totalJasaJS = Number(totalJasaVar);
 
-  const costAktif = tanpaJasa ? totalMaterial : totalMaterial + totalJasa;
+  const costAktif = tanpaJasa ? totalMaterialJS : totalMaterialJS + totalJasaJS;
   const profitAktif = nilaiProject - costAktif;
   const marginAktif = nilaiProject > 0 ? (profitAktif / nilaiProject) * 100 : 0;
 
-  const formatRp = (angka: number) =>
+  const formatRp = (angka) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
 
-  // Update display
   const elCost = document.getElementById('display-total-cost');
   const elProfit = document.getElementById('display-profit');
   const elMargin = document.getElementById('display-margin');
-  const barCost = document.getElementById('bar-cost') as HTMLElement;
-  const barProfit = document.getElementById('bar-profit') as HTMLElement;
+  const barCost = document.getElementById('bar-cost');
+  const barProfit = document.getElementById('bar-profit');
 
   if (elCost) elCost.textContent = formatRp(costAktif);
   if (elProfit) elProfit.textContent = formatRp(profitAktif);
