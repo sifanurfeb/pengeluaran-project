@@ -151,8 +151,21 @@ const formatTanggalSingkat = (tanggalString) => {
           </div>
 
           <div class="bg-emerald-50 border border-emerald-200 p-5 rounded-2xl shadow-xs hover:shadow-md transition-shadow">
-            <div class="text-emerald-700 text-xs font-bold uppercase tracking-wider mb-2">Net Profit ({margin.toFixed(1)}%)</div>
-            <div class="text-xl font-black text-emerald-600 font-mono tracking-tight">{formatRp(profit)}</div>
+          <div class="text-emerald-700 text-xs font-bold uppercase tracking-wider mb-2">Net Profit (<span id="display-margin">{margin.toFixed(1)}</span>%)</div>
+          <div class="text-xl font-black text-emerald-600 font-mono tracking-tight" id="display-profit">{formatRp(profit)}</div>
+
+
+            <!-- Toggle Hitung Tanpa Jasa -->
+              <div class="col-span-1 sm:col-span-2 lg:col-span-5 flex items-center gap-3 bg-blue-50 border border-blue-200 px-5 py-3 rounded-2xl">
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="toggleTanpaJasa" class="sr-only peer" onchange="hitungUlangMargin(this.checked)">
+                  <div class="w-11 h-6 bg-slate-300 peer-checked:bg-blue-600 rounded-full transition-all peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                </label>
+                <div>
+                  <p class="text-sm font-bold text-slate-700">Mode Tanpa Jasa Subcont</p>
+                  <p class="text-xs text-slate-500">Margin dihitung hanya dari biaya material — jasa dikerjakan sendiri</p>
+                </div>
+              </div>
           </div>
           
         </div>
@@ -193,7 +206,9 @@ const formatTanggalSingkat = (tanggalString) => {
     <div>
       <div class="flex justify-between text-xs font-semibold text-slate-500 mb-1">
         <span>Total Cost</span>
-        <span class="font-mono text-red-500">{formatRp(totalKredit)}</span>
+        <div class="bg-red-400 h-4 rounded-full transition-all duration-700" id="bar-cost"
+          style={`width: ${Math.min((totalKredit / (projectInfo?.nilai_project || 1)) * 100, 100).toFixed(1)}%`}>
+        </div>
       </div>
       <div class="w-full bg-slate-100 rounded-full h-4">
         <div 
@@ -206,7 +221,9 @@ const formatTanggalSingkat = (tanggalString) => {
     <div>
       <div class="flex justify-between text-xs font-semibold text-slate-500 mb-1">
         <span>Net Profit</span>
-        <span class={`font-mono font-bold ${profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{formatRp(profit)}</span>
+        <div class={`h-4 rounded-full transition-all duration-700 ${profit >= 0 ? 'bg-emerald-500' : 'bg-red-500'}`} id="bar-profit"
+            style={`width: ${Math.min(Math.abs(profit / (projectInfo?.nilai_project || 1)) * 100, 100).toFixed(1)}%`}>
+        </div>
       </div>
       <div class="w-full bg-slate-100 rounded-full h-4">
         <div 
@@ -402,5 +419,37 @@ const formatTanggalSingkat = (tanggalString) => {
   };
     
   </script>
+
+
+// =====================
+// TOGGLE TANPA JASA
+// =====================
+(window as any).hitungUlangMargin = (tanpaJasa: boolean) => {
+  const nilaiProject = Number({`${projectInfo?.nilai_project || 0}`});
+  const totalMaterial = Number({`${totalMaterial}`});
+  const totalJasa = Number({`${totalJasa}`});
+
+  const costAktif = tanpaJasa ? totalMaterial : totalMaterial + totalJasa;
+  const profitAktif = nilaiProject - costAktif;
+  const marginAktif = nilaiProject > 0 ? (profitAktif / nilaiProject) * 100 : 0;
+
+  const formatRp = (angka: number) =>
+    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
+
+  // Update display
+  const elCost = document.getElementById('display-total-cost');
+  const elProfit = document.getElementById('display-profit');
+  const elMargin = document.getElementById('display-margin');
+  const barCost = document.getElementById('bar-cost') as HTMLElement;
+  const barProfit = document.getElementById('bar-profit') as HTMLElement;
+
+  if (elCost) elCost.textContent = formatRp(costAktif);
+  if (elProfit) elProfit.textContent = formatRp(profitAktif);
+  if (elMargin) elMargin.textContent = marginAktif.toFixed(1);
+
+  if (barCost) barCost.style.width = `${Math.min((costAktif / (nilaiProject || 1)) * 100, 100).toFixed(1)}%`;
+  if (barProfit) barProfit.style.width = `${Math.min(Math.abs(profitAktif / (nilaiProject || 1)) * 100, 100).toFixed(1)}%`;
+};
+
 </body>
 </html>
