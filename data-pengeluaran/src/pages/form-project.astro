@@ -194,6 +194,42 @@ const formatRp = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', 
         }
       });
 
+      // Aksi Klik Hapus
+  document.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const nama = btn.getAttribute('data-nama');
+
+      if (!confirm(`Yakin ingin menghapus proyek "${nama}"? Semua data transaksi terkait proyek ini juga akan ikut terhapus secara permanen.`)) return;
+
+      try {
+        const response = await fetch('/api/function', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ project_id: id })
+        });
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const teksError = await response.text();
+          console.error("Respon Server Bermasalah:", teksError);
+          throw new Error("Server tidak mengembalikan JSON. Cek file api/function.js");
+        }
+
+        const hasil = await response.json();
+
+        if (response.ok && hasil.success) {
+          alert('🗑️ Sukses! Proyek berhasil dihapus.');
+          window.location.reload();
+        } else {
+          alert('❌ Gagal Menghapus: ' + (hasil.message || 'Terjadi kesalahan internal.'));
+        }
+      } catch (err) {
+        alert('⚠️ Gagal Terhubung: ' + err.message);
+      }
+    });
+  });
+
       // Batal Edit
       btnBatal?.addEventListener('click', () => {
         form.reset();
