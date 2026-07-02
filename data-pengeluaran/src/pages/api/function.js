@@ -50,7 +50,7 @@ export const POST = async ({ request }) => {
       const tgl_inv = body.tanggal_invoice;
       const nilai_inv = body.nilai_invoice;
 
-      if (!projectId || !tanggalInvoice || !nilaiInvoice) {
+      if (!projectId || !tgl_inv || !nilai_inv) {
         return new Response(JSON.stringify({ success: false, message: 'Data invoice belum lengkap!' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' }
@@ -61,7 +61,7 @@ export const POST = async ({ request }) => {
         project_id: parseInt(projectId.toString()),
         no_inv: nomorInvoice,
         ket: keterangan,
-        tlg_inv: tanggalInvoice,
+        tgl_inv: tanggalInvoice,
         nilai_inv: parseFloat(nilaiInvoice.toString()),
       };
 
