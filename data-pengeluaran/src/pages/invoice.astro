@@ -34,7 +34,7 @@ if (selectedProjectId) {
     .from('invoice')
     .select('*')
     .eq('project_id', selectedProjectId)
-    .order('tanggal_invoice', { ascending: true });
+    .order('tgl_inv', { ascending: true });
 
   invoices = iData || [];
 
