@@ -1,5 +1,4 @@
 ---
-
 export const prerender = false;
 // src/pages/index.astro
 import { supabase } from '../db/supabase.js';
@@ -22,6 +21,13 @@ let totalMaterial = 0;
 let totalJasa = 0;
 let profit = 0;
 let margin = 0;
+let invoices = [];
+let totalInvoiceDenganPPN = 0;
+let totalInvoiceTanpaPPN = 0;
+let profitInvoice = 0;
+let marginInvoice = 0;
+
+const PPN_RATE = 1.11; // PPN 11%
 
 // 3. Jika user sudah memilih proyek, ambil datanya
 if (selectedProjectId) {
@@ -38,13 +44,23 @@ if (selectedProjectId) {
     .select('*')
     .eq('project_id', selectedProjectId)
     .order('date', { ascending: true });
-  
+
   expenses = eData || [];
+
+  // Fetch data invoice
+  const { data: iData } = await supabase
+    .from('invoice')
+    .select('*')
+    .eq('project_id', selectedProjectId);
+
+  invoices = iData || [];
+  totalInvoiceDenganPPN = invoices.reduce((acc, curr) => acc + (curr.nilai_invoice || 0), 0);
+  totalInvoiceTanpaPPN = totalInvoiceDenganPPN / PPN_RATE;
 
   // ==========================================
   // LOGIKA FILTER & GABUNGAN (SUM) DI ASTRO
   // ==========================================
-  
+
   // A. Filter & SUM Khusus Material
   totalMaterial = expenses
     .filter(item => item.kategori === 'material')
@@ -66,10 +82,15 @@ if (selectedProjectId) {
     // Sisa Jasa = Plafon PO Jasa dari database dikurangi total yang sudah dibayar
     sisaJasa = (projectInfo.po_jasa || 0) - totalJasa;
   }
+
+  // Margin versi Invoice (tanpa PPN)
+  profitInvoice = totalInvoiceTanpaPPN - totalKredit;
+  marginInvoice = totalInvoiceTanpaPPN > 0 ? (profitInvoice / totalInvoiceTanpaPPN) * 100 : 0;
 }
 
 // Helper format Rupiah
 const formatRp = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
+
 // Helper format Tanggal jadi "17 Jun"
 const formatTanggalSingkat = (tanggalString) => {
   if (!tanggalString) return '-';
@@ -117,6 +138,10 @@ const formatTanggalSingkat = (tanggalString) => {
         <br>
         <a href="/form-project" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm shadow-blue-200 transition-all active:scale-95">
           + Input Project Baru
+        </a>
+        <br>
+        <a href={`/invoice?project_id=${selectedProjectId || ''}`} class="inline-flex items-center bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm shadow-emerald-200 transition-all active:scale-95">
+          🧾 Kelola Invoice
         </a>
       </div>
     </div>
@@ -235,12 +260,47 @@ const formatTanggalSingkat = (tanggalString) => {
   </div>
 
   <!-- Legend margin zone -->
+      <!-- Legend margin zone -->
   <div class="mt-4 flex gap-4 text-xs text-slate-500">
     <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> PO</span>
     <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-400 inline-block"></span> Cost</span>
     <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span> Profit</span>
   </div>
 </div>
+
+{invoices.length > 0 ? (
+  <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="font-bold text-slate-800">💵 Margin vs Invoice Masuk (Tanpa PPN)</h3>
+        <p class="text-slate-400 text-xs mt-0.5">Profitabilitas riil berdasarkan uang yang sudah ditagihkan ke customer</p>
+      </div>
+      <span class={`text-lg font-black ${marginInvoice >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
+        <span id="display-margin-invoice">{marginInvoice.toFixed(1)}</span>%
+      </span>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl">
+        <div class="text-xs text-blue-600 font-bold uppercase mb-1">Invoice Masuk (Tanpa PPN)</div>
+        <div class="font-mono font-black text-blue-700">{formatRp(totalInvoiceTanpaPPN)}</div>
+        <div class="text-[10px] text-slate-400 mt-0.5">Termasuk PPN: {formatRp(totalInvoiceDenganPPN)}</div>
+      </div>
+      <div class="bg-red-50 border border-red-200 p-4 rounded-xl">
+        <div class="text-xs text-red-600 font-bold uppercase mb-1">Total Pengeluaran</div>
+        <div class="font-mono font-black text-red-600" id="display-total-cost-invoice">{formatRp(totalKredit)}</div>
+      </div>
+      <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
+        <div class="text-xs text-emerald-700 font-bold uppercase mb-1">Profit (vs Invoice)</div>
+        <div class="font-mono font-black text-emerald-700" id="display-profit-invoice">{formatRp(profitInvoice)}</div>
+      </div>
+    </div>
+  </div>
+) : (
+  <div class="bg-slate-50 border-2 border-dashed border-slate-300 p-5 rounded-2xl mb-6 text-center text-slate-400 text-sm">
+    🧾 Belum ada invoice masuk untuk project ini — margin vs invoice belum bisa dihitung.
+    <a href={`/invoice?project_id=${selectedProjectId}`} class="text-blue-600 font-semibold hover:underline ml-1">Input invoice sekarang →</a>
+  </div>
+)}
 
                 <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/50">
               <div>
@@ -419,31 +479,51 @@ const formatTanggalSingkat = (tanggalString) => {
   };
 </script>
 
-<script define:vars={{ nilaiProjectVar: projectInfo?.nilai_project || 0, totalMaterialVar: totalMaterial, totalJasaVar: totalJasa }}>
+<script define:vars={{ nilaiProjectVar: projectInfo?.nilai_project || 0, totalMaterialVar: totalMaterial, totalJasaVar: totalJasa, totalInvoiceTanpaPPNVar: totalInvoiceTanpaPPN }}>
   window.hitungUlangMargin = function(tanpaJasa) {
     var nilaiProject = Number(nilaiProjectVar);
     var totalMaterialJS = Number(totalMaterialVar);
     var totalJasaJS = Number(totalJasaVar);
+    var totalInvoiceTanpaPPNJS = Number(totalInvoiceTanpaPPNVar);
+
     var costAktif = tanpaJasa ? totalMaterialJS : totalMaterialJS + totalJasaJS;
+
+    // Margin vs PO
     var profitAktif = nilaiProject - costAktif;
     var marginAktif = nilaiProject > 0 ? (profitAktif / nilaiProject) * 100 : 0;
+
+    // Margin vs Invoice
+    var profitInvoiceAktif = totalInvoiceTanpaPPNJS - costAktif;
+    var marginInvoiceAktif = totalInvoiceTanpaPPNJS > 0 ? (profitInvoiceAktif / totalInvoiceTanpaPPNJS) * 100 : 0;
+
     var formatRp = function(angka) {
       return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
     };
+
     var elCost = document.getElementById('display-total-cost');
     var elCostBar = document.getElementById('display-total-cost-bar');
     var elProfit = document.getElementById('display-profit');
     var elMargin = document.getElementById('display-margin');
     var barCost = document.getElementById('bar-cost');
     var barProfit = document.getElementById('bar-profit');
+
+    var elCostInvoice = document.getElementById('display-total-cost-invoice');
+    var elProfitInvoice = document.getElementById('display-profit-invoice');
+    var elMarginInvoice = document.getElementById('display-margin-invoice');
+
     if (elCost) elCost.textContent = formatRp(costAktif);
     if (elCostBar) elCostBar.textContent = formatRp(costAktif);
     if (elProfit) elProfit.textContent = formatRp(profitAktif);
     if (elMargin) elMargin.textContent = marginAktif.toFixed(1);
     if (barCost) barCost.style.width = Math.min((costAktif / (nilaiProject || 1)) * 100, 100).toFixed(1) + '%';
     if (barProfit) barProfit.style.width = Math.min(Math.abs(profitAktif / (nilaiProject || 1)) * 100, 100).toFixed(1) + '%';
+
+    if (elCostInvoice) elCostInvoice.textContent = formatRp(costAktif);
+    if (elProfitInvoice) elProfitInvoice.textContent = formatRp(profitInvoiceAktif);
+    if (elMarginInvoice) elMarginInvoice.textContent = marginInvoiceAktif.toFixed(1);
   };
 </script>
+</body>
 
 </body>
 </html>

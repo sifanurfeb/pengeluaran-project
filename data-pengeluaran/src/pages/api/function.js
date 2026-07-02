@@ -40,7 +40,62 @@ export const POST = async ({ request }) => {
     }
 
     // ========================================================
-    // DETEKSI 2: JIKA YANG DIKIRIM ADALAH DATA PENGELUARAN
+    // DETEKSI 2: JIKA YANG DIKIRIM ADALAH DATA INVOICE
+    // ========================================================
+    if (body.nilai_invoice !== undefined) {
+      const invoiceId = body.invoice_id;
+      const projectId = body.project_id;
+      const nomorInvoice = body.nomor_invoice;
+      const keterangan = body.keterangan;
+      const tanggalInvoice = body.tanggal_invoice;
+      const nilaiInvoice = body.nilai_invoice;
+
+      if (!projectId || !tanggalInvoice || !nilaiInvoice) {
+        return new Response(JSON.stringify({ success: false, message: 'Data invoice belum lengkap!' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      const dataInvoicePayload = {
+        project_id: parseInt(projectId.toString()),
+        nomor_invoice: nomorInvoice,
+        keterangan: keterangan,
+        tanggal_invoice: tanggalInvoice,
+        nilai_invoice: parseFloat(nilaiInvoice.toString()),
+      };
+
+      if (invoiceId && invoiceId !== "undefined") {
+        // --- UPDATE INVOICE (Jika ada invoice_id) ---
+        const { error: updateInvoiceError } = await supabase
+          .from('invoice')
+          .update(dataInvoicePayload)
+          .eq('invoice_id', invoiceId);
+
+        if (updateInvoiceError) throw updateInvoiceError;
+
+        return new Response(JSON.stringify({ success: true, message: 'Invoice berhasil diperbarui!' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      } else {
+        // --- INSERT INVOICE BARU ---
+        const { error: insertInvoiceError } = await supabase
+          .from('invoice')
+          .insert([dataInvoicePayload]);
+
+        if (insertInvoiceError) throw insertInvoiceError;
+
+        return new Response(JSON.stringify({ success: true, message: 'Invoice berhasil disimpan!' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+
+    // ========================================================
+    // DETEKSI 3: JIKA YANG DIKIRIM ADALAH DATA PENGELUARAN
     // ========================================================
     const id = body.id; // Ambil ID pengeluaran (jika dikirim untuk edit)
     const projectId = body.project_id;
@@ -158,6 +213,17 @@ export const DELETE = async ({ request }) => {
 
       if (error) throw error;
       return new Response(JSON.stringify({ success: true, message: 'Proyek berhasil dihapus' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // Jika parameter body berupa 'invoice_id', maka hapus data INVOICE
+    if (body.invoice_id !== undefined) {
+      const { error } = await supabase
+        .from('invoice')
+        .delete()
+        .eq('invoice_id', body.invoice_id);
+
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true, message: 'Invoice berhasil dihapus' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
     return new Response(JSON.stringify({ success: false, message: 'ID tidak valid' }), { status: 400 });
