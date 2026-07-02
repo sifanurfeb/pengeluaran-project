@@ -38,7 +38,7 @@ if (selectedProjectId) {
 
   invoices = iData || [];
 
-  totalInvoiceDenganPPN = invoices.reduce((acc, curr) => acc + (curr.nilai_invoice || 0), 0);
+  totalInvoiceDenganPPN = invoices.reduce((acc, curr) => acc + (curr.nilai_inv || 0), 0);
   totalInvoiceTanpaPPN = totalInvoiceDenganPPN / PPN_RATE;
 }
 
@@ -164,7 +164,7 @@ const formatTanggalSingkat = (tanggalString) => {
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                  {invoices.map((inv) => (
+                 {invoices.map((inv) => (
                     <tr class="hover:bg-slate-50/50">
                       <td class="p-3 pl-4 text-xs text-slate-500 font-mono">{formatTanggalSingkat(inv.tgl_inv)}</td>
                       <td class="p-3 font-semibold text-slate-800">{inv.no_inv || '-'}</td>
@@ -314,7 +314,7 @@ const formatTanggalSingkat = (tanggalString) => {
             const response = await fetch('/api/function', {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ invoice_id: id })
+              body: JSON.stringify({ inv_id: id })
             });
 
             const contentType = response.headers.get("content-type");

@@ -54,7 +54,7 @@ if (selectedProjectId) {
     .eq('project_id', selectedProjectId);
 
   invoices = iData || [];
-  totalInvoiceDenganPPN = invoices.reduce((acc, curr) => acc + (curr.nilai_invoice || 0), 0);
+  totalInvoiceDenganPPN = invoices.reduce((acc, curr) => acc + (curr.nilai_inv || 0), 0);
   totalInvoiceTanpaPPN = totalInvoiceDenganPPN / PPN_RATE;
 
   // ==========================================

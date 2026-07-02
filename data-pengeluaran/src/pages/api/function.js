@@ -42,15 +42,18 @@ export const POST = async ({ request }) => {
     // ========================================================
     // DETEKSI 2: JIKA YANG DIKIRIM ADALAH DATA INVOICE
     // ========================================================
-    if (body.nilai_invoice !== undefined) {
-      const inv_id = body.invoice_id;
+    // ========================================================
+    // DETEKSI 2: JIKA YANG DIKIRIM ADALAH DATA INVOICE
+    // ========================================================
+    if (body.nilai_inv !== undefined) {
+      const invId = body.inv_id;
       const projectId = body.project_id;
-      const no_inv = body.nomor_invoice;
-      const ket = body.keterangan;
-      const tgl_inv = body.tanggal_invoice;
-      const nilai_inv = body.nilai_invoice;
+      const noInv = body.no_inv;
+      const ket = body.ket;
+      const tglInv = body.tgl_inv;
+      const nilaiInv = body.nilai_inv;
 
-      if (!projectId || !tgl_inv || !nilai_inv) {
+      if (!projectId || !tglInv || !nilaiInv) {
         return new Response(JSON.stringify({ success: false, message: 'Data invoice belum lengkap!' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' }
@@ -59,18 +62,17 @@ export const POST = async ({ request }) => {
 
       const dataInvoicePayload = {
         project_id: parseInt(projectId.toString()),
-        no_inv: nomorInvoice,
-        ket: keterangan,
-        tgl_inv: tanggalInvoice,
-        nilai_inv: parseFloat(nilaiInvoice.toString()),
+        no_inv: noInv,
+        ket: ket,
+        tgl_inv: tglInv,
+        nilai_inv: parseFloat(nilaiInv.toString()),
       };
 
-      if (invoiceId && invoiceId !== "undefined") {
-        // --- UPDATE INVOICE (Jika ada invoice_id) ---
+      if (invId && invId !== "undefined") {
         const { error: updateInvoiceError } = await supabase
           .from('invoice')
           .update(dataInvoicePayload)
-          .eq('inv_id', invoiceId);
+          .eq('inv_id', invId);
 
         if (updateInvoiceError) throw updateInvoiceError;
 
@@ -79,7 +81,6 @@ export const POST = async ({ request }) => {
           headers: { 'Content-Type': 'application/json' }
         });
       } else {
-        // --- INSERT INVOICE BARU ---
         const { error: insertInvoiceError } = await supabase
           .from('invoice')
           .insert([dataInvoicePayload]);
@@ -216,11 +217,11 @@ export const DELETE = async ({ request }) => {
     }
 
     // Jika parameter body berupa 'invoice_id', maka hapus data INVOICE
-    if (body.invoice_id !== undefined) {
+    if (body.inv_id !== undefined) {
       const { error } = await supabase
         .from('invoice')
         .delete()
-        .eq('invoice_id', body.invoice_id);
+        .eq('inv_id', body.inv_id);
 
       if (error) throw error;
       return new Response(JSON.stringify({ success: true, message: 'Invoice berhasil dihapus' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
