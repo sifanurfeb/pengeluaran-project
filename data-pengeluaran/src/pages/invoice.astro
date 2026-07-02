@@ -111,12 +111,12 @@ const formatTanggalSingkat = (tanggalString) => {
             <h2 id="formTitle" class="text-sm font-extrabold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2 mb-4">Tambah Invoice</h2>
 
             <form id="invoiceForm" class="space-y-4">
-              <input type="hidden" id="invoice_id" value="" />
+              <input type="hidden" id="inv_id" value="" />
               <input type="hidden" id="project_id" value={selectedProjectId} />
 
               <div>
                 <label class="block text-xs font-bold text-slate-600 mb-1">Nomor Invoice</label>
-                <input type="text" id="nomor_invoice" placeholder="Contoh: INV/001/2026" class="w-full p-2.5 border border-slate-300 rounded-xl outline-none text-sm focus:border-blue-500" />
+                <input type="text" id="no_inv" placeholder="Contoh: INV/001/2026" class="w-full p-2.5 border border-slate-300 rounded-xl outline-none text-sm focus:border-blue-500" />
               </div>
 
               <div>
@@ -126,12 +126,12 @@ const formatTanggalSingkat = (tanggalString) => {
 
               <div>
                 <label class="block text-xs font-bold text-slate-600 mb-1">Tanggal Invoice *</label>
-                <input type="date" id="tanggal_invoice" required class="w-full p-2.5 border border-slate-300 rounded-xl outline-none text-sm focus:border-blue-500" />
+                <input type="date" id="tgl_inv" required class="w-full p-2.5 border border-slate-300 rounded-xl outline-none text-sm focus:border-blue-500" />
               </div>
 
               <div>
                 <label class="block text-xs font-bold text-slate-600 mb-1">Nilai Invoice — Termasuk PPN (Rp) *</label>
-                <input type="number" id="nilai_invoice" required placeholder="Contoh: 22200000" class="w-full p-2.5 border border-slate-300 rounded-xl outline-none text-sm focus:border-blue-500" />
+                <input type="number" id="nilai_inv" required placeholder="Contoh: 22200000" class="w-full p-2.5 border border-slate-300 rounded-xl outline-none text-sm focus:border-blue-500" />
                 <p class="text-[10px] text-slate-400 mt-1">Sistem otomatis hitung nilai tanpa PPN (÷1.11) untuk margin</p>
               </div>
 
@@ -166,26 +166,26 @@ const formatTanggalSingkat = (tanggalString) => {
                 <tbody class="divide-y divide-slate-100">
                   {invoices.map((inv) => (
                     <tr class="hover:bg-slate-50/50">
-                      <td class="p-3 pl-4 text-xs text-slate-500 font-mono">{formatTanggalSingkat(inv.tanggal_invoice)}</td>
-                      <td class="p-3 font-semibold text-slate-800">{inv.nomor_invoice || '-'}</td>
-                      <td class="p-3 text-xs text-slate-600">{inv.keterangan || '-'}</td>
-                      <td class="p-3 text-right font-mono font-bold text-blue-700">{formatRp(inv.nilai_invoice)}</td>
-                      <td class="p-3 text-right font-mono text-emerald-700">{formatRp(inv.nilai_invoice / PPN_RATE)}</td>
+                      <td class="p-3 pl-4 text-xs text-slate-500 font-mono">{formatTanggalSingkat(inv.tgl_inv)}</td>
+                      <td class="p-3 font-semibold text-slate-800">{inv.no_inv || '-'}</td>
+                      <td class="p-3 text-xs text-slate-600">{inv.ket || '-'}</td>
+                      <td class="p-3 text-right font-mono font-bold text-blue-700">{formatRp(inv.nilai_inv)}</td>
+                      <td class="p-3 text-right font-mono text-emerald-700">{formatRp(inv.nilai_inv / PPN_RATE)}</td>
                       <td class="p-3 text-center space-x-1">
                         <button
                           class="btn-edit bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs px-2 py-1 rounded-md font-semibold transition cursor-pointer"
-                          data-id={inv.invoice_id}
-                          data-nomor={inv.nomor_invoice || ''}
-                          data-keterangan={inv.keterangan || ''}
-                          data-tanggal={inv.tanggal_invoice}
-                          data-nilai={inv.nilai_invoice}
+                          data-id={inv.inv_id}
+                          data-nomor={inv.no_inv || ''}
+                          data-keterangan={inv.ket || ''}
+                          data-tanggal={inv.tgl_inv}
+                          data-nilai={inv.nilai_inv}
                         >
                           ✏️ Edit
                         </button>
                         <button
                           class="btn-delete bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs px-2 py-1 rounded-md font-semibold transition cursor-pointer"
-                          data-id={inv.invoice_id}
-                          data-nomor={inv.nomor_invoice || ''}
+                          data-id={inv.inv_id}
+                          data-nomor={inv.no_inv || ''}
                         >
                           🗑️ Hapus
                         </button>
@@ -223,12 +223,12 @@ const formatTanggalSingkat = (tanggalString) => {
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('invoiceForm');
-      const inputInvoiceId = document.getElementById('invoice_id');
+      const inputInvoiceId = document.getElementById('inv_id');
       const inputProjectId = document.getElementById('project_id');
-      const inputNomor = document.getElementById('nomor_invoice');
-      const inputKeterangan = document.getElementById('keterangan');
-      const inputTanggal = document.getElementById('tanggal_invoice');
-      const inputNilai = document.getElementById('nilai_invoice');
+      const inputNomor = document.getElementById('no_inv');
+      const inputKeterangan = document.getElementById('ket');
+      const inputTanggal = document.getElementById('tgl_inv');
+      const inputNilai = document.getElementById('nilai_inv');
       const btnSubmit = document.getElementById('btnSubmit');
       const btnBatal = document.getElementById('btnBatal');
       const formTitle = document.getElementById('formTitle');
@@ -243,13 +243,13 @@ const formatTanggalSingkat = (tanggalString) => {
 
         const dataKirim = {
           project_id: inputProjectId.value,
-          nomor_invoice: inputNomor.value,
-          keterangan: inputKeterangan.value,
-          tanggal_invoice: inputTanggal.value,
-          nilai_invoice: inputNilai.value,
+          no_inv: inputNomor.value,
+          ket: inputKeterangan.value,
+          tgl_inv: inputTanggal.value,
+          nilai_inv: inputNilai.value,
         };
 
-        if (isEdit) dataKirim.invoice_id = invoiceId;
+        if (isEdit) dataKirim.inv_id = invoiceId;
 
         btnSubmit.disabled = true;
         btnSubmit.innerText = 'Memproses...';
