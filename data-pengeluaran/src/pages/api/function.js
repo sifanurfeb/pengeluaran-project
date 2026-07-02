@@ -59,10 +59,10 @@ export const POST = async ({ request }) => {
 
       const dataInvoicePayload = {
         project_id: parseInt(projectId.toString()),
-        nomor_invoice: nomorInvoice,
-        keterangan: keterangan,
-        tanggal_invoice: tanggalInvoice,
-        nilai_invoice: parseFloat(nilaiInvoice.toString()),
+        no_inv: nomorInvoice,
+        ket: keterangan,
+        tlg_inv: tanggalInvoice,
+        nilai_inv: parseFloat(nilaiInvoice.toString()),
       };
 
       if (invoiceId && invoiceId !== "undefined") {
@@ -70,7 +70,7 @@ export const POST = async ({ request }) => {
         const { error: updateInvoiceError } = await supabase
           .from('invoice')
           .update(dataInvoicePayload)
-          .eq('invoice_id', invoiceId);
+          .eq('inv_id', invoiceId);
 
         if (updateInvoiceError) throw updateInvoiceError;
 
