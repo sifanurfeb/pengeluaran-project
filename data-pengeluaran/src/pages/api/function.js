@@ -43,12 +43,12 @@ export const POST = async ({ request }) => {
     // DETEKSI 2: JIKA YANG DIKIRIM ADALAH DATA INVOICE
     // ========================================================
     if (body.nilai_invoice !== undefined) {
-      const invoiceId = body.invoice_id;
+      const inv_id = body.invoice_id;
       const projectId = body.project_id;
-      const nomorInvoice = body.nomor_invoice;
-      const keterangan = body.keterangan;
-      const tanggalInvoice = body.tanggal_invoice;
-      const nilaiInvoice = body.nilai_invoice;
+      const no_inv = body.nomor_invoice;
+      const ket = body.keterangan;
+      const tgl_inv = body.tanggal_invoice;
+      const nilai_inv = body.nilai_invoice;
 
       if (!projectId || !tanggalInvoice || !nilaiInvoice) {
         return new Response(JSON.stringify({ success: false, message: 'Data invoice belum lengkap!' }), {
