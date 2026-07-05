@@ -135,6 +135,12 @@ const formatTanggalSingkat = (tanggalString) => {
                 <p class="text-[10px] text-slate-400 mt-1">Sistem otomatis hitung nilai tanpa PPN (÷1.11) untuk margin</p>
               </div>
 
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Nilai Sudah Dibayar — Termasuk PPN (Rp)</label>
+                <input type="number" id="dibayar" placeholder="Contoh: 15000000" class="w-full p-2.5 border border-slate-300 rounded-xl outline-none text-sm focus:border-blue-500" />
+                <p class="text-[10px] text-slate-400 mt-1">Kosongkan/isi 0 jika belum ada pembayaran masuk untuk invoice ini</p>
+              </div>
+
               <div class="flex gap-2 pt-2">
                 <button type="submit" id="btnSubmit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">
                   Simpan Invoice
@@ -169,8 +175,9 @@ const formatTanggalSingkat = (tanggalString) => {
                       <td class="p-3 pl-4 text-xs text-slate-500 font-mono">{formatTanggalSingkat(inv.tgl_inv)}</td>
                       <td class="p-3 font-semibold text-slate-800">{inv.no_inv || '-'}</td>
                       <td class="p-3 text-xs text-slate-600">{inv.ket || '-'}</td>
-                      <td class="p-3 text-right font-mono font-bold text-blue-700">{formatRp(inv.nilai_inv)}</td>
-                      <td class="p-3 text-right font-mono text-emerald-700">{formatRp(inv.nilai_inv / PPN_RATE)}</td>
+                      <td class="p-3 text-right font-mono text-slate-500">{formatRp(inv.nilai_inv)}</td>
+                      <td class="p-3 text-right font-mono font-bold text-blue-700">{formatRp(inv.dibayar || 0)}</td>
+                      <td class="p-3 text-right font-mono text-emerald-700">{formatRp((inv.dibayar || 0) / PPN_RATE)}</td>
                       <td class="p-3 text-center space-x-1">
                         <button
                           class="btn-edit bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs px-2 py-1 rounded-md font-semibold transition cursor-pointer"
@@ -179,6 +186,7 @@ const formatTanggalSingkat = (tanggalString) => {
                           data-keterangan={inv.ket || ''}
                           data-tanggal={inv.tgl_inv}
                           data-nilai={inv.nilai_inv}
+                          data-dibayar={inv.dibayar || 0}
                         >
                           ✏️ Edit
                         </button>
@@ -247,6 +255,7 @@ const formatTanggalSingkat = (tanggalString) => {
           ket: inputKeterangan.value,
           tgl_inv: inputTanggal.value,
           nilai_inv: inputNilai.value,
+          dibayar: document.getElementById('dibayar').value || 0,
         };
 
         if (isEdit) dataKirim.inv_id = invoiceId;
@@ -293,6 +302,7 @@ const formatTanggalSingkat = (tanggalString) => {
           inputKeterangan.value = target.getAttribute('data-keterangan') || '';
           inputTanggal.value = target.getAttribute('data-tanggal') || '';
           inputNilai.value = target.getAttribute('data-nilai') || '';
+          document.getElementById('dibayar').value = target.getAttribute('data-dibayar') || '0';
 
           formTitle.innerText = "Edit Invoice";
           btnSubmit.innerText = "Simpan Perubahan";

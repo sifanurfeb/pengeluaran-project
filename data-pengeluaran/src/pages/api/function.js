@@ -46,27 +46,30 @@ export const POST = async ({ request }) => {
     // DETEKSI 2: JIKA YANG DIKIRIM ADALAH DATA INVOICE
     // ========================================================
     if (body.nilai_inv !== undefined) {
-      const invId = body.inv_id;
-      const projectId = body.project_id;
-      const noInv = body.no_inv;
-      const ket = body.ket;
-      const tglInv = body.tgl_inv;
-      const nilaiInv = body.nilai_inv;
+    const invId = body.inv_id;
+    const projectId = body.project_id;
+    const noInv = body.no_inv;
+    const ket = body.ket;
+    const tglInv = body.tgl_inv;
+    const nilaiInv = body.nilai_inv;
+    const dibayar = body.dibayar || 0;
 
-      if (!projectId || !tglInv || !nilaiInv) {
-        return new Response(JSON.stringify({ success: false, message: 'Data invoice belum lengkap!' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
+  if (!projectId || !tglInv || !nilaiInv) {
+    return new Response(JSON.stringify({ success: false, message: 'Data invoice belum lengkap!' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 
-      const dataInvoicePayload = {
-        project_id: parseInt(projectId.toString()),
-        no_inv: noInv,
-        ket: ket,
-        tgl_inv: tglInv,
-        nilai_inv: parseFloat(nilaiInv.toString()),
-      };
+  const dataInvoicePayload = {
+    project_id: parseInt(projectId.toString()),
+    no_inv: noInv,
+    ket: ket,
+    tgl_inv: tglInv,
+    nilai_inv: parseFloat(nilaiInv.toString()),
+    dibayar: parseFloat(dibayar.toString()),
+  };
+
 
       if (invId && invId !== "undefined") {
         const { error: updateInvoiceError } = await supabase
