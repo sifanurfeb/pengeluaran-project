@@ -178,7 +178,7 @@ const formatTanggalSingkat = (tanggalString) => {
                       <td class="p-3 text-xs text-slate-600">{inv.ket || '-'}</td>
                       <td class="p-3 text-right font-mono text-slate-500">{formatRp(inv.nilai_inv)}</td>
                       <td class="p-3 text-right font-mono font-bold text-blue-700">{formatRp(inv.dibayar || 0)}</td>
-                      <td class="p-3 text-right font-mono text-emerald-700">{formatRp((inv.dibayar || 0) / PPN_RATE)}</td>
+                      <td class="p-3 text-right font-mono text-emerald-700">{formatRp((inv.nilai_inv || 0) / PPN_RATE)}</td>
                       <td class="p-3 text-center space-x-1">
                         <button
                           class="btn-edit bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs px-2 py-1 rounded-md font-semibold transition cursor-pointer"
