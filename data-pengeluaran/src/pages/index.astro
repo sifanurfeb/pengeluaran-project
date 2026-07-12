@@ -311,6 +311,19 @@ const formatTanggalSingkat = (tanggalString) => {
                 <button onclick="filterKategori('semua')" id="btn-semua" class="filter-btn active-filter bg-slate-800 text-white text-xs px-3 py-1.5 rounded-full font-bold">Semua (<span id="count-semua">{expenses.length}</span>)</button>
                 <button onclick="filterKategori('material')" id="btn-material" class="filter-btn bg-amber-100 text-amber-700 text-xs px-3 py-1.5 rounded-full font-bold hover:bg-amber-200">📦 Material (<span id="count-material">{expenses.filter(e => e.kategori === 'material').length}</span>)</button>
                 <button onclick="filterKategori('jasa')" id="btn-jasa" class="filter-btn bg-purple-100 text-purple-700 text-xs px-3 py-1.5 rounded-full font-bold hover:bg-purple-200">🛠️ Jasa (<span id="count-jasa">{expenses.filter(e => e.kategori === 'jasa').length}</span>)</button>
+            
+               <div class="relative">
+                <input
+                  type="text"
+                  id="searchKeterangan"
+                  oninput="searchTransaksi(this.value)"
+                  placeholder="Cari keterangan..."
+                  class="bg-slate-50 border border-slate-300 text-xs pl-8 pr-3 py-1.5 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-44 sm:w-56 transition"
+                />
+                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+              </div>
+            </div>
+              
               </div>
               <button onclick="exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-full font-bold transition active:scale-95">
                 📥 Export CSV
@@ -417,16 +430,50 @@ const formatTanggalSingkat = (tanggalString) => {
     }
   };
 
+(window as any).currentKategori = 'semua';
+(window as any).currentSearch = '';
+
+(window as any).applyFilters = () => {
+  const kategori = (window as any).currentKategori;
+  const search = (window as any).currentSearch.toLowerCase().trim();
+  const rows = document.querySelectorAll('.expense-row');
+
+  rows.forEach((row: Element) => {
+    const htmlRow = row as HTMLElement;
+    const cocokKategori = kategori === 'semua' || htmlRow.dataset.kategori === kategori;
+
+    // Ambil teks kolom Keterangan (kolom ke-4, index 3)
+    const cells = htmlRow.querySelectorAll('td');
+    const keterangan = (cells[3]?.textContent || '').toLowerCase();
+    const cocokSearch = search === '' || keterangan.includes(search);
+
+    htmlRow.style.display = (cocokKategori && cocokSearch) ? '' : 'none';
+  });
+};
+
 (window as any).filterKategori = (kategori: string) => {
-    const rows = document.querySelectorAll('.expense-row');
-    rows.forEach((row: Element) => {
-      const htmlRow = row as HTMLElement;
-      if (kategori === 'semua' || htmlRow.dataset.kategori === kategori) {
-        htmlRow.style.display = '';
-      } else {
-        htmlRow.style.display = 'none';
-      }
-    });
+  (window as any).currentKategori = kategori;
+  (window as any).applyFilters();
+
+  // Update style tombol aktif
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.remove('bg-slate-800', 'text-white', 'bg-amber-500', 'bg-purple-500');
+    btn.classList.add('opacity-60');
+  });
+
+  const activeBtn = document.getElementById(`btn-${kategori}`);
+  if (activeBtn) {
+    activeBtn.classList.remove('opacity-60');
+    if (kategori === 'semua') activeBtn.classList.add('bg-slate-800', 'text-white');
+    if (kategori === 'material') activeBtn.classList.add('bg-amber-500', 'text-white');
+    if (kategori === 'jasa') activeBtn.classList.add('bg-purple-500', 'text-white');
+  }
+};
+
+(window as any).searchTransaksi = (value: string) => {
+  (window as any).currentSearch = value;
+  (window as any).applyFilters();
+};
 
     // Update style tombol aktif
     document.querySelectorAll('.filter-btn').forEach(btn => {
