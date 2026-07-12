@@ -497,9 +497,9 @@ const formatTanggalSingkat = (tanggalString) => {
       visibleRows.push([tanggal, kategori, pic, keterangan, nominal]);
     });
 
-    // Konversi ke format CSV
+    // Konversi ke format CSV — pakai ; karena Excel versi Indonesia default separator-nya ;
     const csvContent = visibleRows
-      .map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(','))
+      .map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(';'))
       .join('\n');
 
     // Download file
