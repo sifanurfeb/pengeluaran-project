@@ -478,7 +478,7 @@ const formatTanggalSingkat = (tanggalString) => {
 
   (window as any).exportCSV = () => {
     const rows = document.querySelectorAll('.expense-row');
-    const visibleRows: string[][] = [];
+    const visibleRows: (string | number)[][] = [];
 
     // Header kolom
     visibleRows.push(['Tanggal', 'Kategori', 'PIC', 'Keterangan', 'Nominal (Kredit)']);
@@ -492,14 +492,23 @@ const formatTanggalSingkat = (tanggalString) => {
       const kategori = cells[1]?.textContent?.trim() || '';
       const pic = cells[2]?.textContent?.trim() || '';
       const keterangan = cells[3]?.textContent?.trim() || '';
-      const nominal = cells[4]?.textContent?.trim() || '';
 
-      visibleRows.push([tanggal, kategori, pic, keterangan, nominal]);
+      // Bersihin format "Rp 9.990.000" jadi angka murni 9990000
+      const nominalText = cells[4]?.textContent?.trim() || '0';
+      const nominalAngka = parseInt(nominalText.replace(/[^0-9-]/g, ''), 10) || 0;
+
+      visibleRows.push([tanggal, kategori, pic, keterangan, nominalAngka]);
     });
 
-    // Konversi ke format CSV — pakai ; karena Excel versi Indonesia default separator-nya ;
+    // Konversi ke format CSV — angka tidak dibungkus kutip biar Excel baca sebagai number
     const csvContent = visibleRows
-      .map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(';'))
+      .map(row =>
+        row
+          .map((cell, i) =>
+            typeof cell === 'number' ? cell : `"${String(cell).replace(/"/g, '""')}"`
+          )
+          .join(';')
+      )
       .join('\n');
 
     // Download file
