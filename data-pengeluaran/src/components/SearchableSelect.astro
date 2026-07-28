@@ -1,0 +1,260 @@
+---
+export interface Props {
+  name?: string;
+  id?: string;
+  options: { value: string | number; label: string }[];
+  selectedValue?: string | number | null;
+  placeholder?: string;
+  autoSubmit?: boolean;
+  required?: boolean;
+  class?: string;
+}
+
+const {
+  name = "project_id",
+  id = "project_id",
+  options = [],
+  selectedValue = "",
+  placeholder = "-- Pilih Proyek --",
+  autoSubmit = false,
+  required = false,
+  class: className = ""
+} = Astro.props;
+
+const selectedOption = options.find((opt) => String(opt.value) === String(selectedValue));
+const selectedLabel = selectedOption ? selectedOption.label : "";
+---
+
+<div class={`relative searchable-select-root min-w-[260px] md:min-w-[320px] ${className}`} data-auto-submit={autoSubmit ? "true" : "false"}>
+  <!-- Real hidden input for form values -->
+  <input 
+    type="hidden" 
+    name={name} 
+    id={id} 
+    value={selectedValue || ""} 
+    required={required}
+    class="searchable-hidden-input"
+  />
+
+  <!-- Trigger button showing current choice -->
+  <button
+    type="button"
+    class="searchable-trigger flex items-center justify-between w-full bg-slate-50 border border-slate-300 hover:border-blue-400 focus:border-blue-500 text-slate-700 py-2 px-4 rounded-xl shadow-xs text-sm font-medium transition cursor-pointer outline-none focus:ring-2 focus:ring-blue-500/20 group"
+    aria-expanded="false"
+  >
+    <span class="searchable-label truncate text-left font-semibold text-slate-800">
+      {selectedLabel ? (
+        <span>{selectedLabel}</span>
+      ) : (
+        <span class="text-slate-400 font-normal">{placeholder}</span>
+      )}
+    </span>
+    <svg class="w-4 h-4 text-slate-400 group-hover:text-slate-600 shrink-0 ml-2 transition-transform duration-200 searchable-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
+
+  <!-- Dropdown card -->
+  <div class="searchable-dropdown hidden absolute left-0 right-0 top-full mt-1.5 min-w-[300px] sm:min-w-[360px] bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 text-slate-800 animate-in fade-in zoom-in-95 duration-100">
+    <!-- Search Input -->
+    <div class="relative mb-2">
+      <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        type="text"
+        placeholder="🔍 Cari nama proyek..."
+        class="searchable-input w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 transition font-sans"
+        autocomplete="off"
+      />
+    </div>
+
+    <!-- Options Container -->
+    <div class="searchable-options max-h-64 overflow-y-auto space-y-0.5 pr-1">
+      <button
+        type="button"
+        data-value=""
+        data-label={placeholder}
+        class={`searchable-option w-full text-left px-3 py-2 rounded-xl text-sm transition font-medium flex items-center justify-between ${
+          !selectedValue ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+        }`}
+      >
+        <span class="truncate">{placeholder}</span>
+      </button>
+
+      {options.map((opt) => {
+        const isSelected = String(opt.value) === String(selectedValue);
+        return (
+          <button
+            type="button"
+            data-value={opt.value}
+            data-label={opt.label}
+            class={`searchable-option w-full text-left px-3 py-2 rounded-xl text-sm transition font-medium flex items-center justify-between ${
+              isSelected
+                ? 'bg-blue-50 text-blue-700 font-bold border-l-4 border-blue-600 pl-2.5'
+                : 'text-slate-700 hover:bg-blue-50 hover:text-blue-600'
+            }`}
+          >
+            <span class="truncate">{opt.label}</span>
+            {isSelected && (
+              <svg class="w-4 h-4 text-blue-600 shrink-0 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+              </svg>
+            )}
+          </button>
+        );
+      })}
+
+      <div class="searchable-no-results hidden p-4 text-center text-xs text-slate-400 font-medium">
+        🔍 Tidak ditemukan proyek yang cocok
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function initSearchableSelects() {
+    const roots = document.querySelectorAll('.searchable-select-root');
+
+    roots.forEach((root) => {
+      if ((root as any)._searchableInited) return;
+      (root as any)._searchableInited = true;
+
+      const trigger = root.querySelector('.searchable-trigger') as HTMLButtonElement;
+      const dropdown = root.querySelector('.searchable-dropdown') as HTMLDivElement;
+      const searchInput = root.querySelector('.searchable-input') as HTMLInputElement;
+      const hiddenInput = root.querySelector('.searchable-hidden-input') as HTMLInputElement;
+      const labelSpan = root.querySelector('.searchable-label') as HTMLSpanElement;
+      const arrow = root.querySelector('.searchable-arrow') as SVGElement;
+      const options = root.querySelectorAll('.searchable-option') as NodeListOf<HTMLButtonElement>;
+      const noResults = root.querySelector('.searchable-no-results') as HTMLDivElement;
+      const autoSubmit = root.getAttribute('data-auto-submit') === 'true';
+
+      function openDropdown() {
+        dropdown.classList.remove('hidden');
+        trigger.setAttribute('aria-expanded', 'true');
+        if (arrow) arrow.classList.add('rotate-180');
+        searchInput.value = '';
+        filterOptions('');
+        setTimeout(() => searchInput.focus(), 50);
+      }
+
+      function closeDropdown() {
+        dropdown.classList.add('hidden');
+        trigger.setAttribute('aria-expanded', 'false');
+        if (arrow) arrow.classList.remove('rotate-180');
+      }
+
+      function toggleDropdown() {
+        if (dropdown.classList.contains('hidden')) {
+          openDropdown();
+        } else {
+          closeDropdown();
+        }
+      }
+
+      function filterOptions(query: string) {
+        const q = query.toLowerCase().trim();
+        let visibleCount = 0;
+
+        options.forEach((opt) => {
+          const label = (opt.getAttribute('data-label') || '').toLowerCase();
+          if (!q || label.includes(q)) {
+            opt.classList.remove('hidden');
+            visibleCount++;
+          } else {
+            opt.classList.add('hidden');
+          }
+        });
+
+        if (visibleCount === 0) {
+          noResults?.classList.remove('hidden');
+        } else {
+          noResults?.classList.add('hidden');
+        }
+      }
+
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleDropdown();
+      });
+
+      searchInput.addEventListener('click', (e) => e.stopPropagation());
+
+      searchInput.addEventListener('input', (e) => {
+        filterOptions((e.target as HTMLInputElement).value);
+      });
+
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeDropdown();
+          trigger.focus();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          const firstVisible = Array.from(options).find((opt) => !opt.classList.contains('hidden'));
+          if (firstVisible) {
+            selectOption(firstVisible);
+          }
+        }
+      });
+
+      function selectOption(opt: HTMLButtonElement) {
+        const val = opt.getAttribute('data-value') || '';
+        const lbl = opt.getAttribute('data-label') || '';
+
+        hiddenInput.value = val;
+        
+        // Update label display
+        if (val && lbl) {
+          labelSpan.innerHTML = `<span class="font-semibold text-slate-800 truncate">${lbl}</span>`;
+        } else {
+          labelSpan.innerHTML = `<span class="text-slate-400 font-normal">${lbl || '-- Pilih Proyek --'}</span>`;
+        }
+
+        // Update selected state styling
+        options.forEach((o) => {
+          const oVal = o.getAttribute('data-value') || '';
+          if (oVal === val) {
+            o.className = 'searchable-option w-full text-left px-3 py-2 rounded-xl text-sm transition font-medium flex items-center justify-between bg-blue-50 text-blue-700 font-bold border-l-4 border-blue-600 pl-2.5';
+          } else {
+            o.className = 'searchable-option w-full text-left px-3 py-2 rounded-xl text-sm transition font-medium flex items-center justify-between text-slate-700 hover:bg-blue-50 hover:text-blue-600';
+          }
+        });
+
+        // Trigger native change and input events
+        hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+        hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+        closeDropdown();
+
+        if (autoSubmit) {
+          const form = root.closest('form');
+          if (form) {
+            form.submit();
+          }
+        }
+      }
+
+      options.forEach((opt) => {
+        opt.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectOption(opt);
+        });
+      });
+
+      // Close on outside click
+      document.addEventListener('click', (e) => {
+        if (!root.contains(e.target as Node)) {
+          closeDropdown();
+        }
+      });
+    });
+  }
+
+  // Initialize on page load and astro page loads
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSearchableSelects);
+  } else {
+    initSearchableSelects();
+  }
+</script>

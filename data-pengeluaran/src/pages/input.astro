@@ -3,6 +3,7 @@ export const prerender = false;
 
 // src/pages/input.astro
 import { supabase } from '../db/supabase.js';
+import SearchableSelect from '../components/SearchableSelect.astro';
 import '../styles/global.css';
 
 // 1. Ambil daftar proyek untuk isi dropdown
@@ -56,14 +57,14 @@ if (editId && editId !== 'undefined') {
       
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-1">Pilih Proyek *</label>
-        <select id="project_id" required class="w-full p-2.5 border border-gray-300 rounded-lg bg-white">
-          <option value="">-- Pilih Proyek --</option>
-          {projects?.map((project) => (
-            <option value={project.project_id} selected={dataLama?.project_id?.toString() === project.project_id?.toString()}>
-              {project.nama_project}
-            </option>
-          ))}
-        </select>
+        <SearchableSelect
+          id="project_id"
+          name="project_id"
+          options={projects?.map((project) => ({ value: project.project_id, label: project.nama_project })) || []}
+          selectedValue={dataLama?.project_id}
+          placeholder="-- Pilih Proyek --"
+          required={true}
+        />
       </div>
 
       <div>

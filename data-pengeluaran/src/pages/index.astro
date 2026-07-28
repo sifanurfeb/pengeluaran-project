@@ -2,6 +2,7 @@
 export const prerender = false;
 // src/pages/index.astro
 import { supabase } from '../db/supabase.js';
+import SearchableSelect from '../components/SearchableSelect.astro';
 import '../styles/global.css';
 
 // 1. Ambil daftar semua proyek untuk dropdown
@@ -119,18 +120,14 @@ const formatTanggalSingkat = (tanggalString) => {
 
       <div class="flex flex-wrap items-center gap-3">
         <form method="GET" class="flex items-center">
-          <select 
+          <SearchableSelect 
             name="project_id" 
-            onchange="this.form.submit()" 
-            class="bg-slate-50 border border-slate-300 text-slate-700 py-2 px-4 pr-8 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer font-medium text-sm transition"
-          >
-            <option value="">-- Pilih Proyek --</option>
-            {allProjects?.map((p) => (
-              <option value={p.project_id} selected={selectedProjectId == p.project_id}>
-                {p.nama_project}
-              </option>
-            ))}
-          </select>
+            id="project_id"
+            options={allProjects?.map((p) => ({ value: p.project_id, label: p.nama_project })) || []}
+            selectedValue={selectedProjectId}
+            placeholder="-- Pilih Proyek --"
+            autoSubmit={true}
+          />
         </form>
         <a href="/input" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm shadow-blue-200 transition-all active:scale-95">
           + Input Pengeluaran Project Baru
