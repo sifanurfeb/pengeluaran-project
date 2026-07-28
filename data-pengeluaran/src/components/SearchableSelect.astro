@@ -25,7 +25,7 @@ const selectedOption = options.find((opt) => String(opt.value) === String(select
 const selectedLabel = selectedOption ? selectedOption.label : "";
 ---
 
-<div class={`relative searchable-select-root min-w-[260px] md:min-w-[320px] ${className}`} data-auto-submit={autoSubmit ? "true" : "false"}>
+<div class={`relative searchable-select-root w-full ${className}`} data-auto-submit={autoSubmit ? "true" : "false"}>
   <!-- Real hidden input for form values -->
   <input 
     type="hidden" 
@@ -39,7 +39,7 @@ const selectedLabel = selectedOption ? selectedOption.label : "";
   <!-- Trigger button showing current choice -->
   <button
     type="button"
-    class="searchable-trigger flex items-center justify-between w-full bg-slate-50 border border-slate-300 hover:border-blue-400 focus:border-blue-500 text-slate-700 py-2 px-4 rounded-xl shadow-xs text-sm font-medium transition cursor-pointer outline-none focus:ring-2 focus:ring-blue-500/20 group"
+    class="searchable-trigger flex items-center justify-between w-full bg-slate-50 border border-slate-300 hover:border-blue-400 focus:border-blue-500 text-slate-700 py-2.5 px-3.5 rounded-xl shadow-xs text-sm font-medium transition cursor-pointer outline-none focus:ring-2 focus:ring-blue-500/20 group"
     aria-expanded="false"
   >
     <span class="searchable-label truncate text-left font-semibold text-slate-800">
@@ -55,7 +55,7 @@ const selectedLabel = selectedOption ? selectedOption.label : "";
   </button>
 
   <!-- Dropdown card -->
-  <div class="searchable-dropdown hidden absolute left-0 right-0 top-full mt-1.5 min-w-[300px] sm:min-w-[360px] bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 text-slate-800 animate-in fade-in zoom-in-95 duration-100">
+  <div class="searchable-dropdown hidden absolute left-0 right-0 top-full mt-1.5 min-w-[280px] bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 text-slate-800 animate-in fade-in zoom-in-95 duration-100">
     <!-- Search Input -->
     <div class="relative mb-2">
       <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -241,6 +241,25 @@ const selectedLabel = selectedOption ? selectedOption.label : "";
           selectOption(opt);
         });
       });
+
+      // Reset handler for form.reset()
+      const parentForm = root.closest('form');
+      if (parentForm) {
+        parentForm.addEventListener('reset', () => {
+          setTimeout(() => {
+            hiddenInput.value = '';
+            labelSpan.innerHTML = `<span class="text-slate-400 font-normal">${options[0]?.getAttribute('data-label') || '-- Pilih Proyek --'}</span>`;
+            options.forEach((o) => {
+              const oVal = o.getAttribute('data-value') || '';
+              if (!oVal) {
+                o.className = 'searchable-option w-full text-left px-3 py-2 rounded-xl text-sm transition font-medium flex items-center justify-between bg-blue-50 text-blue-700 font-bold';
+              } else {
+                o.className = 'searchable-option w-full text-left px-3 py-2 rounded-xl text-sm transition font-medium flex items-center justify-between text-slate-700 hover:bg-blue-50 hover:text-blue-600';
+              }
+            });
+          }, 10);
+        });
+      }
 
       // Close on outside click
       document.addEventListener('click', (e) => {
