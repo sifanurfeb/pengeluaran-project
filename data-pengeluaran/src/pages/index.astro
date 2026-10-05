@@ -49,8 +49,7 @@ if (selectedProjectId) {
     .from('pengeluaran')
     .select('*')
     .eq('project_id', selectedProjectId)
-    .order('date', { ascending: true })
-    .order('expense_id', { ascending: true });
+    .order('expense_id', { ascending: false });
 
   expenses = eData || [];
 
@@ -315,17 +314,31 @@ const formatTanggalSingkat = (tanggalString) => {
                 <button onclick="filterKategori('material')" id="btn-material" class="filter-btn bg-amber-100 text-amber-700 text-xs px-3 py-1.5 rounded-full font-bold hover:bg-amber-200">📦 Material (<span id="count-material">{expenses.filter(e => e.kategori === 'material').length}</span>)</button>
                 <button onclick="filterKategori('jasa')" id="btn-jasa" class="filter-btn bg-purple-100 text-purple-700 text-xs px-3 py-1.5 rounded-full font-bold hover:bg-purple-200">🛠️ Jasa (<span id="count-jasa">{expenses.filter(e => e.kategori === 'jasa').length}</span>)</button>
             
-               <div class="relative">
-                <input
-                  type="text"
-                  id="searchKeterangan"
-                  oninput="searchTransaksi(this.value)"
-                  placeholder="Cari PIC, keterangan, nominal, tgl..."
-                  class="bg-slate-50 border border-slate-300 text-xs pl-8 pr-3 py-1.5 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-52 sm:w-64 transition"
-                />
-                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+                <div class="relative">
+                  <input
+                    type="text"
+                    id="searchKeterangan"
+                    oninput="searchTransaksi(this.value)"
+                    placeholder="Cari PIC, keterangan, nominal, tgl..."
+                    class="bg-slate-50 border border-slate-300 text-xs pl-8 pr-3 py-1.5 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-52 sm:w-64 transition"
+                  />
+                  <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+                </div>
+
+                <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-full px-3 py-1 text-xs">
+                  <span class="text-slate-500 font-semibold text-[11px]">Urutan:</span>
+                  <select
+                    id="sortOrder"
+                    onchange="changeSort(this.value)"
+                    class="bg-transparent font-bold text-slate-700 outline-none cursor-pointer"
+                  >
+                    <option value="terbaru_input">⚡ Baru Diinput</option>
+                    <option value="tanggal_terbaru">📅 Tanggal Terbaru</option>
+                    <option value="tanggal_terlama">📅 Tanggal Terlama</option>
+                    <option value="nominal_terbesar">💰 Nominal Terbesar</option>
+                  </select>
+                </div>
               </div>
-            </div>
               
               <button onclick="exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-full font-bold transition active:scale-95 shrink-0">
                 📥 Export CSV
@@ -345,7 +358,7 @@ const formatTanggalSingkat = (tanggalString) => {
               </tr>
               </thead>
 
-              <tbody class="text-slate-700 divide-y divide-x divide-slate-200">
+              <tbody id="expenseTbody" class="text-slate-700 divide-y divide-x divide-slate-200">
                 <tr id="empty-search-row" class="hidden">
                   <td colspan="6" class="py-12 text-center text-slate-400 bg-white">
                     <div class="text-3xl mb-2">🔍</div>
@@ -353,40 +366,51 @@ const formatTanggalSingkat = (tanggalString) => {
                     <p class="text-xs text-slate-400 mt-1">Coba gunakan kata kunci lain (PIC, keterangan, tanggal, atau nominal)</p>
                   </td>
                 </tr>
-                          {expenses.map((e) => (
-              <tr class="hover:bg-slate-50/80 transition-colors group expense-row" data-kategori={e.kategori}>
-                <td class="p-4 pl-6 text-sm text-slate-500 font-mono border border-slate-200">{formatTanggalSingkat(e.date)}</td>
-                
-                <td class="p-4 border border-slate-200">
-                  {e.kategori === 'jasa' ? (
-                    <span class="bg-purple-50 text-purple-700 text-[11px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider border border-purple-200">🛠️ Jasa</span>
-                  ) : (
-                    <span class="bg-amber-50 text-amber-700 text-[11px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider border border-amber-200">📦 Material</span>
-                  )}
-                </td>
+                {expenses.map((e, idx) => (
+                  <tr 
+                    class="hover:bg-slate-50/80 transition-colors group expense-row" 
+                    data-kategori={e.kategori}
+                    data-date={e.date}
+                    data-id={e.expense_id}
+                    data-nominal={e.kredit}
+                  >
+                    <td class="p-4 pl-6 text-sm text-slate-500 font-mono border border-slate-200">
+                      <span>{formatTanggalSingkat(e.date)}</span>
+                      {idx === 0 && (
+                        <span class="ml-1.5 inline-block text-[10px] bg-emerald-100 text-emerald-800 font-black px-1.5 py-0.5 rounded-full border border-emerald-200">Baru</span>
+                      )}
+                    </td>
+                    
+                    <td class="p-4 border border-slate-200">
+                      {e.kategori === 'jasa' ? (
+                        <span class="bg-purple-50 text-purple-700 text-[11px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider border border-purple-200">🛠️ Jasa</span>
+                      ) : (
+                        <span class="bg-amber-50 text-amber-700 text-[11px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider border border-amber-200">📦 Material</span>
+                      )}
+                    </td>
 
-                <td class="p-4 font-semibold text-slate-900 border border-slate-200">{e.pic || '-'}</td>
-                <td class="p-4 text-sm text-slate-600 max-w-xs truncate group-hover:text-slate-900 transition-colors border border-slate-200">{e.keterangan || '-'}</td>
-                <td class="p-4 text-right font-mono font-bold text-slate-900 border border-slate-200">{formatRp(e.kredit)}</td>
-                
-                <td class="p-4 pr-6 text-center border border-slate-200">
-                  <div class="inline-flex gap-2">
-                    <a 
-                      href={`/input?id=${e.expense_id}`} 
-                      class="bg-amber-500 hover:bg-amber-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95"
-                    >
-                      ✏️ Edit
-                    </a>
-                    <button 
-                      onclick={`hapusTransaksi(${e.expense_id})`}
-                      class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95"
-                    >
-                      🗑️ Hapus
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                    <td class="p-4 font-semibold text-slate-900 border border-slate-200">{e.pic || '-'}</td>
+                    <td class="p-4 text-sm text-slate-600 max-w-xs truncate group-hover:text-slate-900 transition-colors border border-slate-200">{e.keterangan || '-'}</td>
+                    <td class="p-4 text-right font-mono font-bold text-slate-900 border border-slate-200">{formatRp(e.kredit)}</td>
+                    
+                    <td class="p-4 pr-6 text-center border border-slate-200">
+                      <div class="inline-flex gap-2">
+                        <a 
+                          href={`/input?id=${e.expense_id}`} 
+                          class="bg-amber-500 hover:bg-amber-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95"
+                        >
+                          ✏️ Edit
+                        </a>
+                        <button 
+                          onclick={`hapusTransaksi(${e.expense_id})`}
+                          class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95"
+                        >
+                          🗑️ Hapus
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
             
@@ -396,6 +420,37 @@ const formatTanggalSingkat = (tanggalString) => {
                 <p class="text-sm font-medium">Belum ada data pengeluaran untuk proyek ini.</p>
               </div>
             )}
+          </div>
+
+          <!-- Pagination Bar (Batas 10 Baris per Halaman) -->
+          <div id="pagination-container" class="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div id="pagination-info" class="text-xs text-slate-500 font-medium text-center sm:text-left">
+              Menampilkan <span class="font-bold text-slate-800">1 - {Math.min(10, expenses.length)}</span> dari <span class="font-bold text-slate-800">{expenses.length}</span> transaksi
+            </div>
+
+            <div class="flex items-center justify-center gap-1.5 self-center sm:self-auto">
+              <button
+                type="button"
+                id="btn-prev-page"
+                onclick="prevPage()"
+                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white text-xs font-bold text-slate-700 transition cursor-pointer disabled:cursor-not-allowed shadow-xs"
+              >
+                ⬅️ Sebelumnya
+              </button>
+
+              <div id="pagination-numbers" class="flex items-center gap-1">
+                <!-- Tombol angka halaman dirender via JavaScript -->
+              </div>
+
+              <button
+                type="button"
+                id="btn-next-page"
+                onclick="nextPage()"
+                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white text-xs font-bold text-slate-700 transition cursor-pointer disabled:cursor-not-allowed shadow-xs"
+              >
+                Berikutnya ➡️
+              </button>
+            </div>
           </div>
         </div>
       </>
@@ -442,12 +497,132 @@ const formatTanggalSingkat = (tanggalString) => {
 
   (window as any).currentKategori = 'semua';
   (window as any).currentSearch = '';
+  (window as any).currentPage = 1;
+  const ITEMS_PER_PAGE = 10;
+
+  function renderPagination(totalItems: number, totalPages: number, curPage: number) {
+    const container = document.getElementById('pagination-container');
+    const infoEl = document.getElementById('pagination-info');
+    const pageNumbersEl = document.getElementById('pagination-numbers');
+    const prevBtn = document.getElementById('btn-prev-page') as HTMLButtonElement;
+    const nextBtn = document.getElementById('btn-next-page') as HTMLButtonElement;
+
+    if (!container) return;
+
+    if (totalItems === 0) {
+      container.classList.add('hidden');
+      return;
+    }
+
+    container.classList.remove('hidden');
+
+    const start = (curPage - 1) * ITEMS_PER_PAGE + 1;
+    const end = Math.min(curPage * ITEMS_PER_PAGE, totalItems);
+    if (infoEl) {
+      infoEl.innerHTML = `Menampilkan <span class="font-bold text-slate-800">${start} - ${end}</span> dari <span class="font-bold text-slate-800">${totalItems}</span> transaksi`;
+    }
+
+    if (prevBtn) {
+      prevBtn.disabled = curPage <= 1;
+    }
+    if (nextBtn) {
+      nextBtn.disabled = curPage >= totalPages;
+    }
+
+    if (pageNumbersEl) {
+      pageNumbersEl.innerHTML = '';
+
+      for (let p = 1; p <= totalPages; p++) {
+        if (totalPages > 7) {
+          if (p !== 1 && p !== totalPages && Math.abs(p - curPage) > 1) {
+            if (p === 2 && curPage > 3) {
+              const dots = document.createElement('span');
+              dots.className = 'px-1.5 py-1 text-slate-400 text-xs font-bold';
+              dots.textContent = '...';
+              pageNumbersEl.appendChild(dots);
+            } else if (p === totalPages - 1 && curPage < totalPages - 2) {
+              const dots = document.createElement('span');
+              dots.className = 'px-1.5 py-1 text-slate-400 text-xs font-bold';
+              dots.textContent = '...';
+              pageNumbersEl.appendChild(dots);
+            }
+            continue;
+          }
+        }
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = String(p);
+        btn.className = p === curPage
+          ? 'w-8 h-8 flex items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-xs shadow-xs transition cursor-default'
+          : 'w-8 h-8 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 font-semibold text-xs transition cursor-pointer shadow-2xs';
+        
+        btn.onclick = () => {
+          (window as any).goToPage(p);
+        };
+        pageNumbersEl.appendChild(btn);
+      }
+    }
+  }
+
+  (window as any).goToPage = (page: number) => {
+    (window as any).currentPage = page;
+    (window as any).applyFilters();
+  };
+
+  (window as any).prevPage = () => {
+    if ((window as any).currentPage > 1) {
+      (window as any).currentPage--;
+      (window as any).applyFilters();
+    }
+  };
+
+  (window as any).nextPage = () => {
+    (window as any).currentPage++;
+    (window as any).applyFilters();
+  };
+
+  (window as any).changeSort = (mode: string) => {
+    const tbody = document.getElementById('expenseTbody');
+    const emptyRow = document.getElementById('empty-search-row');
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.querySelectorAll('.expense-row')) as HTMLElement[];
+
+    rows.sort((a, b) => {
+      if (mode === 'tanggal_terlama') {
+        const dateA = a.dataset.date || '';
+        const dateB = b.dataset.date || '';
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return Number(a.dataset.id || 0) - Number(b.dataset.id || 0);
+      }
+      if (mode === 'tanggal_terbaru') {
+        const dateA = a.dataset.date || '';
+        const dateB = b.dataset.date || '';
+        if (dateA !== dateB) return dateB.localeCompare(dateA);
+        return Number(b.dataset.id || 0) - Number(a.dataset.id || 0);
+      }
+      if (mode === 'nominal_terbesar') {
+        return Number(b.dataset.nominal || 0) - Number(a.dataset.nominal || 0);
+      }
+      // Default: 'terbaru_input' (ID tertinggi di atas)
+      return Number(b.dataset.id || 0) - Number(a.dataset.id || 0);
+    });
+
+    rows.forEach(r => tbody.appendChild(r));
+    if (emptyRow) tbody.prepend(emptyRow);
+
+    (window as any).currentPage = 1;
+    (window as any).applyFilters();
+  };
 
   (window as any).applyFilters = () => {
     const kategori = (window as any).currentKategori;
     const search = (window as any).currentSearch.toLowerCase().trim();
+    const searchWords = search.split(/\s+/).filter(Boolean);
     const rows = document.querySelectorAll('.expense-row');
-    let visibleCount = 0;
+
+    const matchingRows: HTMLElement[] = [];
 
     rows.forEach((row: Element) => {
       const htmlRow = row as HTMLElement;
@@ -460,31 +635,59 @@ const formatTanggalSingkat = (tanggalString) => {
       const keterangan = (cells[3]?.textContent || '').toLowerCase();
       const nominal = (cells[4]?.textContent || '').toLowerCase();
 
-      // Pencarian multi-kolom: PIC, Keterangan, Nominal, Tanggal, dan Kategori
-      const cocokSearch = search === '' || 
-        pic.includes(search) || 
-        keterangan.includes(search) || 
-        nominal.includes(search) || 
-        tanggal.includes(search) ||
-        kat.includes(search);
+      // Pencarian multi-kata: semua kata pencarian harus ditemukan di baris
+      const cocokSearch = searchWords.length === 0 || searchWords.every((w: string) => 
+        pic.includes(w) || 
+        keterangan.includes(w) || 
+        nominal.includes(w) || 
+        tanggal.includes(w) ||
+        kat.includes(w)
+      );
 
-      const tampil = cocokKategori && cocokSearch;
-      htmlRow.style.display = tampil ? '' : 'none';
-      if (tampil) visibleCount++;
+      if (cocokKategori && cocokSearch) {
+        matchingRows.push(htmlRow);
+      } else {
+        htmlRow.style.display = 'none';
+      }
+    });
+
+    const totalMatching = matchingRows.length;
+    const totalPages = Math.ceil(totalMatching / ITEMS_PER_PAGE) || 1;
+
+    if ((window as any).currentPage > totalPages) {
+      (window as any).currentPage = totalPages;
+    }
+    if ((window as any).currentPage < 1) {
+      (window as any).currentPage = 1;
+    }
+
+    const curPage = (window as any).currentPage;
+    const startIndex = (curPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+
+    matchingRows.forEach((htmlRow, index) => {
+      if (index >= startIndex && index < endIndex) {
+        htmlRow.style.display = '';
+      } else {
+        htmlRow.style.display = 'none';
+      }
     });
 
     const emptyRow = document.getElementById('empty-search-row');
     if (emptyRow) {
-      if (rows.length > 0 && visibleCount === 0) {
+      if (rows.length > 0 && totalMatching === 0) {
         emptyRow.classList.remove('hidden');
       } else {
         emptyRow.classList.add('hidden');
       }
     }
+
+    renderPagination(totalMatching, totalPages, curPage);
   };
 
   (window as any).filterKategori = (kategori: string) => {
     (window as any).currentKategori = kategori;
+    (window as any).currentPage = 1;
     (window as any).applyFilters();
 
     // Update style tombol aktif
@@ -504,10 +707,14 @@ const formatTanggalSingkat = (tanggalString) => {
 
   (window as any).searchTransaksi = (value: string) => {
     (window as any).currentSearch = value;
+    (window as any).currentPage = 1;
     (window as any).applyFilters();
   };
 
   (window as any).exportCSV = () => {
+    const kategori = (window as any).currentKategori;
+    const search = (window as any).currentSearch.toLowerCase().trim();
+    const searchWords = search.split(/\s+/).filter(Boolean);
     const rows = document.querySelectorAll('.expense-row');
     const visibleRows: (string | number)[][] = [];
 
@@ -516,22 +723,29 @@ const formatTanggalSingkat = (tanggalString) => {
 
     rows.forEach((row: Element) => {
       const htmlRow = row as HTMLElement;
-      if (htmlRow.style.display === 'none') return; // Skip yang disembunyikan filter
+      const cocokKategori = kategori === 'semua' || htmlRow.dataset.kategori === kategori;
 
       const cells = htmlRow.querySelectorAll('td');
       const tanggal = cells[0]?.textContent?.trim() || '';
-      const kategori = cells[1]?.textContent?.trim() || '';
+      const kat = cells[1]?.textContent?.trim() || '';
       const pic = cells[2]?.textContent?.trim() || '';
       const keterangan = cells[3]?.textContent?.trim() || '';
-
-      // Bersihin format "Rp 9.990.000" jadi angka murni 9990000
       const nominalText = cells[4]?.textContent?.trim() || '0';
-      const nominalAngka = parseInt(nominalText.replace(/[^0-9-]/g, ''), 10) || 0;
 
-      visibleRows.push([tanggal, kategori, pic, keterangan, nominalAngka]);
+      const cocokSearch = searchWords.length === 0 || searchWords.every((w: string) => 
+        pic.toLowerCase().includes(w) || 
+        keterangan.toLowerCase().includes(w) || 
+        nominalText.toLowerCase().includes(w) || 
+        tanggal.toLowerCase().includes(w) ||
+        kat.toLowerCase().includes(w)
+      );
+
+      if (!cocokKategori || !cocokSearch) return;
+
+      const nominalAngka = parseInt(nominalText.replace(/[^0-9-]/g, ''), 10) || 0;
+      visibleRows.push([tanggal, kat, pic, keterangan, nominalAngka]);
     });
 
-    // Konversi ke format CSV — angka tidak dibungkus kutip biar Excel baca sebagai number
     const csvContent = visibleRows
       .map(row =>
         row
@@ -542,7 +756,6 @@ const formatTanggalSingkat = (tanggalString) => {
       )
       .join('\n');
 
-    // Download file
     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -551,6 +764,13 @@ const formatTanggalSingkat = (tanggalString) => {
     link.click();
     URL.revokeObjectURL(url);
   };
+
+  // Inisialisasi batas 10 baris dan pagination saat halaman dimuat
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => (window as any).applyFilters());
+  } else {
+    (window as any).applyFilters();
+  }
 </script>
 
 <script define:vars={{ nilaiProjectVar: projectInfo?.nilai_project || 0, totalMaterialVar: totalMaterial, totalJasaVar: totalJasa, totalInvoiceTanpaPPNVar: totalInvoiceTanpaPPN }}>
