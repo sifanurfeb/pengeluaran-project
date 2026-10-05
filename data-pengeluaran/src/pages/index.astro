@@ -5,6 +5,11 @@ import { supabase } from '../db/supabase.js';
 import SearchableSelect from '../components/SearchableSelect.astro';
 import '../styles/global.css';
 
+// Header anti-cache agar saat refresh dashboard selalu mengambil data terbaru dari Supabase
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+Astro.response.headers.set('CDN-Cache-Control', 'no-store');
+Astro.response.headers.set('Netlify-CDN-Cache-Control', 'no-store');
+
 // 1. Ambil daftar semua proyek untuk dropdown
 const { data: allProjects } = await supabase
   .from('project')
@@ -44,7 +49,8 @@ if (selectedProjectId) {
     .from('pengeluaran')
     .select('*')
     .eq('project_id', selectedProjectId)
-    .order('date', { ascending: true });
+    .order('date', { ascending: true })
+    .order('expense_id', { ascending: true });
 
   expenses = eData || [];
 
@@ -65,12 +71,12 @@ if (selectedProjectId) {
   // A. Filter & SUM Khusus Material
   totalMaterial = expenses
     .filter(item => item.kategori === 'material')
-    .reduce((acc, curr) => acc + (curr.kredit || 0), 0);
+    .reduce((acc, curr) => acc + Number(curr.kredit || 0), 0);
 
   // B. Filter & SUM Khusus Jasa
   totalJasa = expenses
     .filter(item => item.kategori === 'jasa')
-    .reduce((acc, curr) => acc + (curr.kredit || 0), 0);
+    .reduce((acc, curr) => acc + Number(curr.kredit || 0), 0);
 
   // C. Gabungan Total Cost (Material + Jasa)
   totalKredit = totalMaterial + totalJasa;
@@ -129,7 +135,7 @@ const formatTanggalSingkat = (tanggalString) => {
             autoSubmit={true}
           />
         </form>
-        <a href="/input" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm shadow-blue-200 transition-all active:scale-95">
+        <a href={`/input${selectedProjectId ? `?project_id=${selectedProjectId}` : ''}`} class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm shadow-blue-200 transition-all active:scale-95">
           + Input Pengeluaran Project Baru
         </a>
         <br>
@@ -314,33 +320,39 @@ const formatTanggalSingkat = (tanggalString) => {
                   type="text"
                   id="searchKeterangan"
                   oninput="searchTransaksi(this.value)"
-                  placeholder="Cari keterangan..."
-                  class="bg-slate-50 border border-slate-300 text-xs pl-8 pr-3 py-1.5 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-44 sm:w-56 transition"
+                  placeholder="Cari PIC, keterangan, nominal, tgl..."
+                  class="bg-slate-50 border border-slate-300 text-xs pl-8 pr-3 py-1.5 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-52 sm:w-64 transition"
                 />
                 <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
               </div>
             </div>
               
-              </div>
-              <button onclick="exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-full font-bold transition active:scale-95">
+              <button onclick="exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-full font-bold transition active:scale-95 shrink-0">
                 📥 Export CSV
               </button>
             </div>
 
-          <div class="overflow-x-auto">
+          <div class="overflow-x-auto max-h-[600px] overflow-y-auto relative border-t border-slate-200">
             <table class="w-full text-left border-collapse border border-slate-300">
-              <thead>
-              <tr class="bg-slate-100/70 text-slate-600 text-xs font-bold uppercase tracking-wider">
-                <th class="p-4 pl-6 border border-slate-300">Tanggal</th>
-                <th class="p-4 border border-slate-300">Kategori</th>
-                <th class="p-4 border border-slate-300">PIC</th>
-                <th class="p-4 border border-slate-300">Keterangan / Keperluan</th>
-                <th class="p-4 text-right border border-slate-300">Nominal (Kredit)</th>
-                <th class="p-4 pr-6 text-center border border-slate-300">Aksi</th>
+              <thead class="sticky top-0 z-10 bg-slate-100 shadow-xs">
+              <tr class="bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider">
+                <th class="p-4 pl-6 border border-slate-300 sticky top-0 bg-slate-100 shadow-xs">Tanggal</th>
+                <th class="p-4 border border-slate-300 sticky top-0 bg-slate-100 shadow-xs">Kategori</th>
+                <th class="p-4 border border-slate-300 sticky top-0 bg-slate-100 shadow-xs">PIC</th>
+                <th class="p-4 border border-slate-300 sticky top-0 bg-slate-100 shadow-xs">Keterangan / Keperluan</th>
+                <th class="p-4 text-right border border-slate-300 sticky top-0 bg-slate-100 shadow-xs">Nominal (Kredit)</th>
+                <th class="p-4 pr-6 text-center border border-slate-300 sticky top-0 bg-slate-100 shadow-xs">Aksi</th>
               </tr>
               </thead>
 
               <tbody class="text-slate-700 divide-y divide-x divide-slate-200">
+                <tr id="empty-search-row" class="hidden">
+                  <td colspan="6" class="py-12 text-center text-slate-400 bg-white">
+                    <div class="text-3xl mb-2">🔍</div>
+                    <p class="text-sm font-semibold text-slate-600">Tidak ada transaksi yang cocok dengan pencarian</p>
+                    <p class="text-xs text-slate-400 mt-1">Coba gunakan kata kunci lain (PIC, keterangan, tanggal, atau nominal)</p>
+                  </td>
+                </tr>
                           {expenses.map((e) => (
               <tr class="hover:bg-slate-50/80 transition-colors group expense-row" data-kategori={e.kategori}>
                 <td class="p-4 pl-6 text-sm text-slate-500 font-mono border border-slate-200">{formatTanggalSingkat(e.date)}</td>
@@ -435,18 +447,40 @@ const formatTanggalSingkat = (tanggalString) => {
     const kategori = (window as any).currentKategori;
     const search = (window as any).currentSearch.toLowerCase().trim();
     const rows = document.querySelectorAll('.expense-row');
+    let visibleCount = 0;
 
     rows.forEach((row: Element) => {
       const htmlRow = row as HTMLElement;
       const cocokKategori = kategori === 'semua' || htmlRow.dataset.kategori === kategori;
 
-      // Ambil teks kolom Keterangan (kolom ke-4, index 3)
       const cells = htmlRow.querySelectorAll('td');
+      const tanggal = (cells[0]?.textContent || '').toLowerCase();
+      const kat = (cells[1]?.textContent || '').toLowerCase();
+      const pic = (cells[2]?.textContent || '').toLowerCase();
       const keterangan = (cells[3]?.textContent || '').toLowerCase();
-      const cocokSearch = search === '' || keterangan.includes(search);
+      const nominal = (cells[4]?.textContent || '').toLowerCase();
 
-      htmlRow.style.display = (cocokKategori && cocokSearch) ? '' : 'none';
+      // Pencarian multi-kolom: PIC, Keterangan, Nominal, Tanggal, dan Kategori
+      const cocokSearch = search === '' || 
+        pic.includes(search) || 
+        keterangan.includes(search) || 
+        nominal.includes(search) || 
+        tanggal.includes(search) ||
+        kat.includes(search);
+
+      const tampil = cocokKategori && cocokSearch;
+      htmlRow.style.display = tampil ? '' : 'none';
+      if (tampil) visibleCount++;
     });
+
+    const emptyRow = document.getElementById('empty-search-row');
+    if (emptyRow) {
+      if (rows.length > 0 && visibleCount === 0) {
+        emptyRow.classList.remove('hidden');
+      } else {
+        emptyRow.classList.add('hidden');
+      }
+    }
   };
 
   (window as any).filterKategori = (kategori: string) => {
