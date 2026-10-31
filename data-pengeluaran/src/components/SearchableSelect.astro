@@ -130,6 +130,15 @@ const selectedLabel = selectedOption ? selectedOption.label : "";
       const noResults = root.querySelector('.searchable-no-results') as HTMLDivElement;
       const autoSubmit = root.getAttribute('data-auto-submit') === 'true';
 
+      // Render label tanpa innerHTML agar nilai dari database tidak bisa menyuntikkan HTML/JS (anti-XSS)
+      function applyLabel(text: string, muted: boolean) {
+        labelSpan.textContent = '';
+        const span = document.createElement('span');
+        span.className = muted ? 'text-slate-400 font-normal' : 'font-semibold text-slate-800 truncate';
+        span.textContent = text;
+        labelSpan.appendChild(span);
+      }
+
       function openDropdown() {
         dropdown.classList.remove('hidden');
         trigger.setAttribute('aria-expanded', 'true');
@@ -206,9 +215,9 @@ const selectedLabel = selectedOption ? selectedOption.label : "";
         
         // Update label display
         if (val && lbl) {
-          labelSpan.innerHTML = `<span class="font-semibold text-slate-800 truncate">${lbl}</span>`;
+          applyLabel(lbl, false);
         } else {
-          labelSpan.innerHTML = `<span class="text-slate-400 font-normal">${lbl || '-- Pilih Proyek --'}</span>`;
+          applyLabel(lbl || '-- Pilih Proyek --', true);
         }
 
         // Update selected state styling
@@ -248,7 +257,7 @@ const selectedLabel = selectedOption ? selectedOption.label : "";
         parentForm.addEventListener('reset', () => {
           setTimeout(() => {
             hiddenInput.value = '';
-            labelSpan.innerHTML = `<span class="text-slate-400 font-normal">${options[0]?.getAttribute('data-label') || '-- Pilih Proyek --'}</span>`;
+            applyLabel(options[0]?.getAttribute('data-label') || '-- Pilih Proyek --', true);
             options.forEach((o) => {
               const oVal = o.getAttribute('data-value') || '';
               if (!oVal) {

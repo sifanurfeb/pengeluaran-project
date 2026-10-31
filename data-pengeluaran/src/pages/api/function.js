@@ -23,12 +23,22 @@ export const POST = async ({ request }) => {
         });
       }
 
+      const nilaiProjectNum = parseFloat(nilaiProject.toString());
+      const poJasaNum = parseFloat(poJasa.toString());
+
+      if (Number.isNaN(nilaiProjectNum) || Number.isNaN(poJasaNum)) {
+        return new Response(JSON.stringify({ success: false, message: 'Nilai proyek dan PO jasa harus berupa angka!' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
       const { error: projectError } = await supabase
         .from('project')
         .insert([{ 
           nama_project: namaProject, 
-          nilai_project: parseFloat(nilaiProject.toString()),
-          po_jasa: parseFloat(poJasa.toString()) 
+          nilai_project: nilaiProjectNum,
+          po_jasa: poJasaNum 
         }]);
 
       if (projectError) throw projectError;
@@ -61,13 +71,24 @@ export const POST = async ({ request }) => {
     });
   }
 
+  const projectIdNum = parseInt(projectId.toString(), 10);
+  const nilaiInvNum = parseFloat(nilaiInv.toString());
+  const dibayarNum = parseFloat(dibayar.toString());
+
+  if (Number.isNaN(projectIdNum) || Number.isNaN(nilaiInvNum) || Number.isNaN(dibayarNum)) {
+    return new Response(JSON.stringify({ success: false, message: 'Project ID dan nilai invoice harus berupa angka!' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   const dataInvoicePayload = {
-    project_id: parseInt(projectId.toString()),
+    project_id: projectIdNum,
     no_inv: noInv,
     ket: ket,
     tgl_inv: tglInv,
-    nilai_inv: parseFloat(nilaiInv.toString()),
-    dibayar: parseFloat(dibayar.toString()),
+    nilai_inv: nilaiInvNum,
+    dibayar: dibayarNum,
   };
 
 
@@ -116,14 +137,24 @@ export const POST = async ({ request }) => {
       });
     }
 
+    const projectIdNum = parseInt(projectId.toString(), 10);
+    const kreditNum = parseFloat(kredit.toString());
+
+    if (Number.isNaN(projectIdNum) || Number.isNaN(kreditNum)) {
+      return new Response(JSON.stringify({ success: false, message: 'Project ID dan nominal kredit harus berupa angka!' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     // Struktur payload data pengeluaran
     const dataPayload = {
-      project_id: parseInt(projectId.toString()),
+      project_id: projectIdNum,
       date: date,
       pic: pic,
       kategori: kategori,
       keterangan: keterangan,
-      kredit: parseFloat(kredit.toString()),
+      kredit: kreditNum,
     };
 
     if (id && id !== "undefined") {
@@ -159,7 +190,7 @@ export const POST = async ({ request }) => {
 
   } catch (error) {
     console.error("Detail Error di Single Function API:", error.message);
-    return new Response(JSON.stringify({ success: false, message: error.message }), {
+    return new Response(JSON.stringify({ success: false, message: 'Terjadi kesalahan pada server.' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
@@ -174,19 +205,31 @@ export const PUT = async ({ request }) => {
     const body = await request.json();
     const { project_id, nama_project, nilai_project, po_jasa } = body;
 
+    if (!project_id || !nama_project || !nilai_project) {
+      return new Response(JSON.stringify({ success: false, message: 'Data proyek belum lengkap!' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    const nilaiProjectNum = parseFloat(nilai_project.toString());
+    const poJasaNum = parseFloat((po_jasa || 0).toString());
+
+    if (Number.isNaN(nilaiProjectNum) || Number.isNaN(poJasaNum)) {
+      return new Response(JSON.stringify({ success: false, message: 'Nilai proyek dan PO jasa harus berupa angka!' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
+
     const { error } = await supabase
       .from('project')
       .update({ 
         nama_project: nama_project, 
-        nilai_project: parseFloat(nilai_project.toString()),
-        po_jasa: parseFloat((po_jasa || 0).toString()) 
+        nilai_project: nilaiProjectNum,
+        po_jasa: poJasaNum 
       })
       .eq('project_id', project_id);
 
     if (error) throw error;
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (error) {
-    return new Response(JSON.stringify({ success: false, message: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    console.error("Detail Error di PUT function API:", error.message);
+    return new Response(JSON.stringify({ success: false, message: 'Terjadi kesalahan pada server.' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 };
 
@@ -233,6 +276,7 @@ export const DELETE = async ({ request }) => {
     return new Response(JSON.stringify({ success: false, message: 'ID tidak valid' }), { status: 400 });
 
   } catch (error) {
-    return new Response(JSON.stringify({ success: false, message: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    console.error("Detail Error di DELETE function API:", error.message);
+    return new Response(JSON.stringify({ success: false, message: 'Terjadi kesalahan pada server.' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 };

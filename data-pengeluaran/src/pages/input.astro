@@ -209,13 +209,25 @@ const activeProjectId = dataLama?.project_id || defaultProjectId || '';
               recentSection.classList.remove('hidden');
               const item = document.createElement('div');
               item.className = 'p-2.5 bg-emerald-50/80 border border-emerald-200 rounded-xl flex items-center justify-between';
-              item.innerHTML = `
-                <div>
-                  <p class="font-bold text-slate-800">${dataKirim.keterangan || '(Tanpa keterangan)'}</p>
-                  <p class="text-[11px] text-slate-500">${dataKirim.date} • ${dataKirim.kategori === 'material' ? '📦 Material' : '🛠️ Jasa'}${dataKirim.pic ? ` • PIC: ${dataKirim.pic}` : ''}</p>
-                </div>
-                <span class="font-mono font-bold text-emerald-700 text-xs">Rp ${Number(dataKirim.kredit).toLocaleString('id-ID')}</span>
-              `;
+
+              const leftDiv = document.createElement('div');
+
+              const pKet = document.createElement('p');
+              pKet.className = 'font-bold text-slate-800';
+              pKet.textContent = dataKirim.keterangan || '(Tanpa keterangan)';
+              leftDiv.appendChild(pKet);
+
+              const pMeta = document.createElement('p');
+              pMeta.className = 'text-[11px] text-slate-500';
+              pMeta.textContent = `${dataKirim.date} • ${dataKirim.kategori === 'material' ? '📦 Material' : '🛠️ Jasa'}${dataKirim.pic ? ` • PIC: ${dataKirim.pic}` : ''}`;
+              leftDiv.appendChild(pMeta);
+
+              const spanNominal = document.createElement('span');
+              spanNominal.className = 'font-mono font-bold text-emerald-700 text-xs';
+              spanNominal.textContent = `Rp ${Number(dataKirim.kredit).toLocaleString('id-ID')}`;
+
+              item.appendChild(leftDiv);
+              item.appendChild(spanNominal);
               recentList.prepend(item);
               recentCount.textContent = String(recentList.children.length);
             }
