@@ -49,8 +49,8 @@ if (selectedProjectId) {
     .from('pengeluaran')
     .select('*')
     .eq('project_id', selectedProjectId)
-    .order('date', { ascending: true })
-    .order('expense_id', { ascending: true });
+    .order('date', { ascending: false })
+    .order('expense_id', { ascending: false });
 
   expenses = eData || [];
 
